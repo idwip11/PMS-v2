@@ -1,0 +1,7 @@
+{
+  "name": "homiq-pms-local",
+  "private": true,
+  "scripts": {
+    "dev": "./dev-local.sh"
+  }
+}

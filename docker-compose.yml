@@ -1,0 +1,58 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8080:80"
+    environment:
+      TZ: Asia/Makassar
+      CI_ENVIRONMENT: development
+      app.baseURL: http://localhost:8080/
+      app.indexPage: ''
+      database.default.hostname: mysql
+      database.default.database: homiq_pms
+      database.default.username: homiq
+      database.default.password: homiq_local_password
+      database.default.DBDriver: MySQLi
+      database.default.port: 3306
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - homiq_uploads:/var/www/html/writable/uploads
+
+  mysql:
+    image: mysql:8.4
+    ports:
+      - "3307:3306"
+    environment:
+      TZ: Asia/Makassar
+      MYSQL_DATABASE: homiq_pms
+      MYSQL_USER: homiq
+      MYSQL_PASSWORD: homiq_local_password
+      MYSQL_ROOT_PASSWORD: root_local_password
+    volumes:
+      - homiq_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot_local_password"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  phpmyadmin:
+    image: phpmyadmin:5
+    ports:
+      - "8081:80"
+    environment:
+      TZ: Asia/Makassar
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: homiq
+      PMA_PASSWORD: homiq_local_password
+      UPLOAD_LIMIT: 64M
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  homiq_mysql_data:
+  homiq_uploads:
