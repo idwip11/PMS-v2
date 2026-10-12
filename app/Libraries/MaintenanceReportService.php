@@ -68,43 +68,46 @@ class MaintenanceReportService
 
         $ticketStats = $this->db->query(
             "SELECT
-                SUM(status = 'Open') AS open_count,
-                SUM(status = 'Assigned') AS assigned_count,
-                SUM(status = 'In_Progress') AS in_progress_count,
-                SUM(status = 'Waiting_Part') AS waiting_part_count
-             FROM maintenance_tickets"
+                SUM(t.status = 'Open') AS open_count,
+                SUM(t.status = 'Assigned') AS assigned_count,
+                SUM(t.status = 'In_Progress') AS in_progress_count,
+                SUM(t.status = 'Waiting_Part') AS waiting_part_count
+             FROM maintenance_tickets t JOIN rooms r ON r.id = t.room_id WHERE r.property_id = ?",
+            [PropertyContext::activeId()]
         )->getRowArray() ?? [];
 
         $scheduleStats = $this->db->query(
             "SELECT
-                SUM(is_active = 1 AND DATE(next_due_at) < ?) AS overdue,
-                SUM(is_active = 1 AND DATE(next_due_at) BETWEEN ? AND DATE_ADD(?, INTERVAL 7 DAY)) AS due_7,
-                SUM(is_active = 1 AND DATE(next_due_at) BETWEEN DATE_ADD(?, INTERVAL 8 DAY) AND DATE_ADD(?, INTERVAL 30 DAY)) AS due_30
-             FROM maintenance_schedules",
-            [$today, $today, $today, $today, $today]
+                SUM(s.is_active = 1 AND DATE(s.next_due_at) < ?) AS overdue,
+                SUM(s.is_active = 1 AND DATE(s.next_due_at) BETWEEN ? AND DATE_ADD(?, INTERVAL 7 DAY)) AS due_7,
+                SUM(s.is_active = 1 AND DATE(s.next_due_at) BETWEEN DATE_ADD(?, INTERVAL 8 DAY) AND DATE_ADD(?, INTERVAL 30 DAY)) AS due_30
+             FROM maintenance_schedules s JOIN room_assets a ON a.id = s.room_asset_id JOIN rooms r ON r.id = a.room_id WHERE r.property_id = ?",
+            [$today, $today, $today, $today, $today, PropertyContext::activeId()]
         )->getRowArray() ?? [];
 
         $serviceCost = $this->db->query(
-            "SELECT COALESCE(SUM(labor_cost + external_cost), 0) AS total
-             FROM maintenance_tickets
-             WHERE COALESCE(completed_at, updated_at, created_at) >= ?
-               AND COALESCE(completed_at, updated_at, created_at) < ?",
-            [$monthStart, $monthEnd]
+            "SELECT COALESCE(SUM(t.labor_cost + t.external_cost), 0) AS total
+             FROM maintenance_tickets t JOIN rooms r ON r.id = t.room_id
+             WHERE COALESCE(t.completed_at, t.updated_at, t.created_at) >= ?
+               AND COALESCE(t.completed_at, t.updated_at, t.created_at) < ? AND r.property_id = ?",
+            [$monthStart, $monthEnd, PropertyContext::activeId()]
         )->getRowArray();
         $materialCost = $this->db->query(
             "SELECT COALESCE(SUM((items.quantity_used - items.quantity_returned) * items.unit_cost_snapshot), 0) AS total
              FROM maintenance_ticket_items items
              JOIN maintenance_tickets tickets ON tickets.id = items.maintenance_ticket_id
+             JOIN rooms r ON r.id = tickets.room_id
              WHERE items.movement_type = 'Usage'
                AND COALESCE(tickets.completed_at, tickets.updated_at, tickets.created_at) >= ?
-               AND COALESCE(tickets.completed_at, tickets.updated_at, tickets.created_at) < ?",
-            [$monthStart, $monthEnd]
+               AND COALESCE(tickets.completed_at, tickets.updated_at, tickets.created_at) < ? AND r.property_id = ?",
+            [$monthStart, $monthEnd, PropertyContext::activeId()]
         )->getRowArray();
         $activeWork = $this->activeWorkDuration();
 
         $activeTickets = $this->db->table('maintenance_tickets')
             ->select('maintenance_tickets.id, maintenance_tickets.ticket_number, maintenance_tickets.status, maintenance_tickets.priority, maintenance_tickets.created_at, rooms.room_number, maintenance_categories.name AS category_name, room_assets.asset_name')
             ->join('rooms', 'rooms.id = maintenance_tickets.room_id')
+            ->where('rooms.property_id', PropertyContext::activeId())
             ->join('maintenance_categories', 'maintenance_categories.id = maintenance_tickets.maintenance_category_id', 'left')
             ->join('room_assets', 'room_assets.id = maintenance_tickets.room_asset_id', 'left')
             ->whereIn('maintenance_tickets.status', ['Open', 'Assigned', 'In_Progress', 'Waiting_Part', 'Completed'])
@@ -118,21 +121,23 @@ class MaintenanceReportService
              JOIN room_assets ON room_assets.id = maintenance_tickets.room_asset_id
              JOIN rooms ON rooms.id = maintenance_tickets.room_id
              LEFT JOIN maintenance_categories ON maintenance_categories.id = maintenance_tickets.maintenance_category_id
-             WHERE maintenance_tickets.ticket_type = 'Corrective'
+             WHERE rooms.property_id = ? AND maintenance_tickets.ticket_type = 'Corrective'
                AND maintenance_tickets.created_at >= DATE_SUB(?, INTERVAL 12 MONTH)
              GROUP BY room_assets.id, room_assets.asset_name, rooms.room_number, maintenance_categories.name
              HAVING COUNT(*) >= 2
              ORDER BY incident_count DESC, rooms.room_number ASC
              LIMIT 5",
-            [$now->format('Y-m-d H:i:s')]
+            [PropertyContext::activeId(), $now->format('Y-m-d H:i:s')]
         )->getResultArray();
 
         $lowStockParts = $this->db->table('inventory_items')
+            ->where('property_id', PropertyContext::activeId())
             ->select('id, name, current_stock, min_threshold, unit')
             ->where('item_type', 'Spare Part')->where('is_active', 1)
             ->where('current_stock <= min_threshold', null, false)
             ->orderBy('current_stock', 'ASC')->limit(5)->get()->getResultArray();
         $lowStockPartCount = $this->db->table('inventory_items')
+            ->where('property_id', PropertyContext::activeId())
             ->where('item_type', 'Spare Part')->where('is_active', 1)
             ->where('current_stock <= min_threshold', null, false)
             ->countAllResults();
@@ -149,7 +154,7 @@ class MaintenanceReportService
                 'due_7' => (int) ($scheduleStats['due_7'] ?? 0),
                 'due_30' => (int) ($scheduleStats['due_30'] ?? 0),
             ],
-            'blocked_rooms' => $this->db->table('rooms')->where('status', 'Maintenance')->countAllResults(),
+            'blocked_rooms' => $this->db->table('rooms')->where('property_id', PropertyContext::activeId())->where('status', 'Maintenance')->countAllResults(),
             'month_cost' => (float) ($serviceCost['total'] ?? 0) + (float) ($materialCost['total'] ?? 0),
             'mttr_minutes' => $activeWork['minutes'],
             'mttr_ticket_count' => $activeWork['ticket_count'],
@@ -165,6 +170,7 @@ class MaintenanceReportService
         return $this->db->table('maintenance_tickets')
             ->select("maintenance_tickets.*, rooms.room_number, maintenance_categories.name AS category_name, room_assets.asset_name, assignee.full_name AS assigned_to_name, (SELECT COALESCE(SUM((report_items.quantity_used - report_items.quantity_returned) * report_items.unit_cost_snapshot), 0) FROM maintenance_ticket_items report_items WHERE report_items.maintenance_ticket_id = maintenance_tickets.id AND report_items.movement_type = 'Usage') AS material_cost", false)
             ->join('rooms', 'rooms.id = maintenance_tickets.room_id')
+            ->where('rooms.property_id', PropertyContext::activeId())
             ->join('maintenance_categories', 'maintenance_categories.id = maintenance_tickets.maintenance_category_id', 'left')
             ->join('room_assets', 'room_assets.id = maintenance_tickets.room_asset_id', 'left')
             ->join('users assignee', 'assignee.id = maintenance_tickets.assigned_to_user_id', 'left');
@@ -179,9 +185,11 @@ class MaintenanceReportService
     private function activeWorkDuration(): array
     {
         $tickets = $this->db->table('maintenance_tickets')
-            ->select('id, completed_at')
-            ->where('status', 'Closed')
-            ->where('completed_at IS NOT NULL', null, false)
+            ->select('maintenance_tickets.id, maintenance_tickets.completed_at')
+            ->join('rooms', 'rooms.id = maintenance_tickets.room_id')
+            ->where('rooms.property_id', PropertyContext::activeId())
+            ->where('maintenance_tickets.status', 'Closed')
+            ->where('maintenance_tickets.completed_at IS NOT NULL', null, false)
             ->get()->getResultArray();
         if ($tickets === []) {
             return ['minutes' => 0, 'ticket_count' => 0];

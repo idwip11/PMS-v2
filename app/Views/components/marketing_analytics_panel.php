@@ -3,38 +3,49 @@ $monthNames = [1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Jul
 $periodLabel = $filter->month() === null
     ? 'Tahun ' . $filter->year()
     : $monthNames[$filter->month()] . ' ' . $filter->year();
-$guesthouseLabel = $filter->includesAllGuesthouses()
-    ? 'Semua guesthouse'
-    : 'GH ' . implode(', GH ', $filter->guesthouses());
+$isHomiq = $filter->propertyId() === 1;
+$isMonthly = \App\Libraries\PropertyPricing::forProperty($filter->propertyId())['pricing_mode'] === 'room_monthly';
+$guesthouseLabel = $isHomiq
+    ? ($filter->includesAllGuesthouses() ? 'Semua guesthouse' : 'GH ' . implode(', GH ', $filter->guesthouses()))
+    : (string) session('activePropertyName');
 $summary = $analytics['summary'];
 $origins = $analytics['origins'];
+$originCount = count($origins);
+$topOrigins = array_slice($origins, 0, 10);
 $loyalGuests = $analytics['loyal_guests'];
-$originLabels = array_column($origins, 'label');
-$originValues = array_map('intval', array_column($origins, 'value'));
-$originPercentages = array_map('floatval', array_column($origins, 'percentage'));
-$chartHeight = max(280, min(560, 115 + count($origins) * 42));
+$originLabels = array_column($topOrigins, 'label');
+$originValues = array_map('intval', array_column($topOrigins, 'value'));
+$originPercentages = array_map('floatval', array_column($topOrigins, 'percentage'));
+$chartHeight = max(280, min(560, 115 + count($topOrigins) * 42));
 $performance = $analytics['performance'];
 $performanceRows = $performance['rows'];
-$performanceLabels = array_map(static fn (array $row): string => 'GH ' . $row['guesthouse'], $performanceRows);
+$performanceLabels = array_map(static fn (array $row): string => $isHomiq ? 'GH ' . $row['guesthouse'] : $guesthouseLabel, $performanceRows);
 $performanceRevenue = array_map(static fn (array $row): float => $row['revenue'], $performanceRows);
 $performanceCost = array_map(static fn (array $row): float => $row['cost'], $performanceRows);
 $performanceProfit = array_map(static fn (array $row): float => $row['profit'], $performanceRows);
-$occupancy = $analytics['occupancy'];
-$occupancyPoints = $occupancy['points'];
-$occupancyLabels = array_column($occupancyPoints, 'label');
-$occupancyValues = array_map(static fn (array $point): float => $point['occupancy'], $occupancyPoints);
-$annualSummary = $analytics['annual_summary'];
-$annualPoints = $annualSummary['points'];
-$annualLabels = array_map(static fn (array $point): string => (string) $point['year'], $annualPoints);
-$annualOccupancy = array_map(static fn (array $point): float => $point['occupancy'], $annualPoints);
-$annualRoomNights = array_map(static fn (array $point): int => $point['room_nights_sold'], $annualPoints);
-$annualSelected = $annualSummary['selected'];
-$forecast = $analytics['forecast'];
-$forecastHistory = $forecast['history'];
-$forecastPoints = $forecast['points'];
-$serviceRevenue = $analytics['service_revenue'];
-$cancellations = $analytics['cancellations'];
-$bookingWindow = $analytics['booking_window'];
+if (!$isMonthly) {
+    $occupancy = $analytics['occupancy'];
+    $occupancyPoints = $occupancy['points'];
+    $occupancyLabels = array_column($occupancyPoints, 'label');
+    $occupancyValues = array_map(static fn (array $point): float => $point['occupancy'], $occupancyPoints);
+    $annualSummary = $analytics['annual_summary'];
+    $annualPoints = $annualSummary['points'];
+    $annualLabels = array_map(static fn (array $point): string => (string) $point['year'], $annualPoints);
+    $annualOccupancy = array_map(static fn (array $point): float => $point['occupancy'], $annualPoints);
+    $annualRoomNights = array_map(static fn (array $point): int => $point['room_nights_sold'], $annualPoints);
+    $annualSelected = $annualSummary['selected'];
+    $forecast = $analytics['forecast'];
+    $forecastHistory = $forecast['history'];
+    $forecastPoints = $forecast['points'];
+    $serviceRevenue = $analytics['service_revenue'];
+    $cancellations = $analytics['cancellations'];
+    $bookingWindow = $analytics['booking_window'];
+} else {
+    $vacantDays = $analytics['vacant_days'];
+    $tenantTurnover = $analytics['tenant_turnover'];
+    $committedRent = $analytics['committed_rent'];
+    $leaseExpirations = $analytics['lease_expirations'];
+}
 ?>
 
 <section aria-labelledby="marketing-analytics-heading">
@@ -80,13 +91,13 @@ $bookingWindow = $analytics['booking_window'];
         <div class="col-12 min-width-0">
             <article class="card border-0 shadow-sm marketing-chart-card">
                 <div class="card-body p-4">
-                    <h3 class="h5 mb-1">Asal tamu utama</h3>
-                    <p class="text-secondary small mb-3">Tamu unik per lokasi · n=<?= number_format($summary['unique_guests'], 0, ',', '.') ?></p>
+                    <h3 class="h5 mb-1">Top 10 asal tamu utama</h3>
+                    <p class="text-secondary small mb-3">Tamu unik per lokasi · n=<?= number_format($summary['unique_guests'], 0, ',', '.') ?><?php if ($originCount > 10): ?> · menampilkan 10 dari <?= number_format($originCount, 0, ',', '.') ?> asal<?php endif; ?></p>
                     <?php if ($origins === []): ?>
                         <div class="marketing-empty-state" role="status">
                             <span class="marketing-empty-icon" aria-hidden="true">○</span>
                             <strong>Belum ada data asal tamu</strong>
-                            <span>Tidak ada reservasi valid dalam periode dan guesthouse yang dipilih.</span>
+                            <span>Tidak ada reservasi valid dalam periode dan properti yang dipilih.</span>
                         </div>
                     <?php else: ?>
                         <div class="marketing-origin-chart-wrap" style="height: <?= $chartHeight ?>px">
@@ -105,33 +116,56 @@ $bookingWindow = $analytics['booking_window'];
         <div class="col-12 min-width-0">
             <article class="card border-0 shadow-sm">
                 <div class="card-header bg-white border-0 p-4 pb-2">
-                    <h3 class="h5 mb-1">Top 10 tamu paling loyal</h3>
-                    <p class="text-secondary small mb-0">Diurutkan berdasarkan booking unik, lalu total malam dan nominal reservasi.</p>
+                    <h3 class="h5 mb-1"><?= $isMonthly ? 'Penghuni kos paling lama (dalam hitungan bulan)' : 'Top 10 tamu paling loyal' ?></h3>
+                    <p class="text-secondary small mb-0"><?= $isMonthly ? 'Diurutkan berdasarkan durasi sewa terlama (dalam hitungan bulan), lalu total nominal sewa.' : 'Diurutkan berdasarkan booking unik, lalu total malam dan nominal reservasi.' ?></p>
                 </div>
                 <?php if ($loyalGuests === []): ?>
                     <div class="card-body p-4 pt-2">
                         <div class="marketing-empty-state" role="status">
                             <span class="marketing-empty-icon" aria-hidden="true">○</span>
-                            <strong>Belum ada data loyalitas</strong>
-                            <span>Tidak ada reservasi valid untuk filter yang dipilih.</span>
+                            <strong><?= $isMonthly ? 'Belum ada data penghuni' : 'Belum ada data loyalitas' ?></strong>
+                            <span><?= $isMonthly ? 'Tidak ada reservasi sewa valid untuk filter yang dipilih.' : 'Tidak ada reservasi valid untuk filter yang dipilih.' ?></span>
                         </div>
                     </div>
                 <?php else: ?>
+                    <?php if ($isMonthly): ?>
+                        <?php
+                        $tenantNames = array_column($loyalGuests, 'full_name');
+                        $tenantMonths = array_map(static fn (array $g): float => round((float) $g['total_nights'] / 30, 1), $loyalGuests);
+                        $tenantNights = array_map(static fn (array $g): int => (int) $g['total_nights'], $loyalGuests);
+                        ?>
+                        <div class="card-body p-4 pt-0 pb-3">
+                            <div style="height: 260px;">
+                                <canvas id="marketingTenantDurationChart"
+                                        role="img"
+                                        aria-label="Grafik batang penghuni kos paling lama dalam hitungan bulan"
+                                        data-labels='<?= esc(json_encode($tenantNames, JSON_UNESCAPED_UNICODE), 'attr') ?>'
+                                        data-values='<?= esc(json_encode($tenantMonths), 'attr') ?>'
+                                        data-nights='<?= esc(json_encode($tenantNights), 'attr') ?>'></canvas>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                     <div class="table-responsive">
                         <table class="table align-middle marketing-loyalty-table mb-0">
                             <thead>
                                 <tr>
                                     <th scope="col">#</th>
-                                    <th scope="col">Tamu</th>
+                                    <th scope="col"><?= $isMonthly ? 'Penghuni' : 'Tamu' ?></th>
                                     <th scope="col">Asal</th>
-                                    <th class="text-end" scope="col">Booking</th>
-                                    <th class="text-end" scope="col">Malam</th>
+                                    <th class="text-end" scope="col"><?= $isMonthly ? 'Sewa' : 'Booking' ?></th>
+                                    <th class="text-end" scope="col"><?= $isMonthly ? 'Lama Sewa (Bulan)' : 'Malam' ?></th>
                                     <th class="text-end" scope="col">Total nominal</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach ($loyalGuests as $index => $guest): ?>
-                                    <?php $origin = normalize_guest_origin($guest['origin'] ?? null); ?>
+                                    <?php
+                                    $origin = normalize_guest_origin($guest['origin'] ?? null);
+                                    if ($isMonthly) {
+                                        $monthsVal = round((float) $guest['total_nights'] / 30, 1);
+                                        $monthsFormatted = ($monthsVal == (int) $monthsVal) ? (int) $monthsVal : number_format($monthsVal, 1, ',', '.');
+                                    }
+                                    ?>
                                     <tr>
                                         <td><span class="marketing-rank <?= $index < 3 ? 'is-top' : '' ?>"><?= $index + 1 ?></span></td>
                                         <td>
@@ -140,7 +174,14 @@ $bookingWindow = $analytics['booking_window'];
                                         </td>
                                         <td><span class="badge <?= $origin === 'Tidak diketahui' ? 'text-bg-warning' : 'text-bg-light border' ?>"><?= esc($origin) ?></span></td>
                                         <td class="text-end fw-semibold"><?= number_format((int) $guest['booking_count'], 0, ',', '.') ?></td>
-                                        <td class="text-end"><?= number_format((int) $guest['total_nights'], 0, ',', '.') ?></td>
+                                        <td class="text-end">
+                                            <?php if ($isMonthly): ?>
+                                                <span class="fw-semibold text-primary"><?= $monthsFormatted ?> Bulan</span>
+                                                <small class="text-secondary d-block"><?= number_format((int) $guest['total_nights'], 0, ',', '.') ?> hari</small>
+                                            <?php else: ?>
+                                                <?= number_format((int) $guest['total_nights'], 0, ',', '.') ?>
+                                            <?php endif; ?>
+                                        </td>
                                         <td class="text-end text-nowrap">Rp<?= number_format((float) $guest['total_nominal'], 0, ',', '.') ?></td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -155,7 +196,7 @@ $bookingWindow = $analytics['booking_window'];
     <section class="mt-4" aria-labelledby="marketing-performance-heading">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
             <div>
-                <h3 class="h5 mb-1" id="marketing-performance-heading">Perbandingan performa guesthouse</h3>
+                <h3 class="h5 mb-1" id="marketing-performance-heading"><?= $isHomiq ? 'Perbandingan performa guesthouse' : 'Performa properti' ?></h3>
                 <p class="text-secondary small mb-0">Revenue berdasarkan tanggal pembayaran diterima; cost berdasarkan tanggal expense dicatat.</p>
             </div>
             <span class="badge rounded-pill text-bg-light border align-self-start align-self-md-center"><?= esc($periodLabel) ?></span>
@@ -165,13 +206,13 @@ $bookingWindow = $analytics['booking_window'];
             <div class="col-12 min-width-0">
                 <article class="card border-0 shadow-sm marketing-chart-card">
                     <div class="card-body p-4">
-                        <h4 class="h6 mb-1">Revenue, cost, dan profit per GH</h4>
+                        <h4 class="h6 mb-1">Revenue, cost, dan profit <?= $isHomiq ? 'per GH' : 'properti' ?></h4>
                         <p class="text-secondary small mb-3">Dalam Rupiah · <?= esc($guesthouseLabel) ?></p>
                         <?php if ($performanceRows === []): ?>
-                            <div class="marketing-empty-state" role="status"><span class="marketing-empty-icon" aria-hidden="true">○</span><strong>Belum ada guesthouse dalam filter</strong></div>
+                            <div class="marketing-empty-state" role="status"><span class="marketing-empty-icon" aria-hidden="true">○</span><strong>Belum ada data dalam filter</strong></div>
                         <?php else: ?>
                             <div class="marketing-performance-chart-wrap">
-                                <canvas id="marketingPerformanceChart" role="img" aria-label="Grafik perbandingan revenue, cost, dan profit per guesthouse" data-labels='<?= esc(json_encode($performanceLabels), 'attr') ?>' data-revenue='<?= esc(json_encode($performanceRevenue), 'attr') ?>' data-cost='<?= esc(json_encode($performanceCost), 'attr') ?>' data-profit='<?= esc(json_encode($performanceProfit), 'attr') ?>'></canvas>
+                                <canvas id="marketingPerformanceChart" role="img" aria-label="Grafik revenue, cost, dan profit properti" data-labels='<?= esc(json_encode($performanceLabels), 'attr') ?>' data-revenue='<?= esc(json_encode($performanceRevenue), 'attr') ?>' data-cost='<?= esc(json_encode($performanceCost), 'attr') ?>' data-profit='<?= esc(json_encode($performanceProfit), 'attr') ?>'></canvas>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -181,11 +222,11 @@ $bookingWindow = $analytics['booking_window'];
                 <article class="card border-0 shadow-sm">
                     <div class="table-responsive">
                         <table class="table align-middle marketing-performance-table mb-0">
-                            <thead><tr><th>Guesthouse</th><th class="text-end">Revenue</th><th class="text-end">Cost</th><th class="text-end">Profit</th><th class="text-end">Margin</th></tr></thead>
+                            <thead><tr><th><?= $isHomiq ? 'Guesthouse' : 'Properti' ?></th><th class="text-end">Revenue</th><th class="text-end">Cost</th><th class="text-end">Profit</th><th class="text-end">Margin</th></tr></thead>
                             <tbody>
                                 <?php foreach ($performanceRows as $row): ?>
                                     <tr>
-                                        <td class="fw-semibold">GH <?= (int) $row['guesthouse'] ?></td>
+                                        <td class="fw-semibold"><?= esc($isHomiq ? 'GH ' . (int) $row['guesthouse'] : $guesthouseLabel) ?></td>
                                         <td class="text-end text-nowrap">Rp<?= number_format($row['revenue'], 0, ',', '.') ?></td>
                                         <td class="text-end text-nowrap">Rp<?= number_format($row['cost'], 0, ',', '.') ?></td>
                                         <td class="text-end text-nowrap fw-semibold <?= $row['profit'] < 0 ? 'text-danger' : 'text-success' ?>">Rp<?= number_format($row['profit'], 0, ',', '.') ?></td>
@@ -200,7 +241,7 @@ $bookingWindow = $analytics['booking_window'];
                         <?php if ($performance['unallocated_expense'] > 0): ?>
                             <div class="alert alert-warning small mb-0"><strong>Expense belum dialokasikan:</strong> Rp<?= number_format($performance['unallocated_expense'], 0, ',', '.') ?> tidak dimasukkan ke GH mana pun.</div>
                         <?php else: ?>
-                            <p class="text-secondary small mb-0">Semua expense pada periode ini telah dialokasikan. Expense multi-GH dibagi rata; total cost pada tabel tidak menduplikasi nominal expense.</p>
+                            <p class="text-secondary small mb-0"><?= $isHomiq ? 'Semua expense pada periode ini telah dialokasikan. Expense multi-GH dibagi rata; total cost pada tabel tidak menduplikasi nominal expense.' : 'Semua expense properti pada periode ini tercakup dalam total cost.' ?></p>
                         <?php endif; ?>
                     </div>
                 </article>
@@ -208,11 +249,12 @@ $bookingWindow = $analytics['booking_window'];
         </div>
     </section>
 
+    <?php if (!$isMonthly): ?>
     <section class="mt-4" aria-labelledby="marketing-services-heading">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
             <div>
                 <h3 class="h5 mb-1" id="marketing-services-heading">Pendapatan layanan tambahan</h3>
-                <p class="text-secondary small mb-0">Dana diterima pada periode pembayaran · layanan ini masuk kas perusahaan, bukan pendapatan Owner GH.</p>
+                <p class="text-secondary small mb-0">Dana diterima pada periode pembayaran · layanan ini masuk kas perusahaan, bukan pendapatan owner.</p>
             </div>
             <span class="badge rounded-pill text-bg-light border align-self-start align-self-md-center"><?= number_format($serviceRevenue['payment_count'], 0, ',', '.') ?> pembayaran Paid</span>
         </div>
@@ -276,7 +318,7 @@ $bookingWindow = $analytics['booking_window'];
                     <div class="col-sm"><p class="small text-secondary mb-0"><strong>Petunjuk:</strong> kapasitas periode = <?= number_format($occupancy['summary']['room_count'], 0, ',', '.') ?> kamar × <?= number_format($occupancy['summary']['period_days'], 0, ',', '.') ?> hari = <?= number_format($occupancy['summary']['room_nights_available'], 0, ',', '.') ?> kamar-malam teoritis. Ini bukan jumlah kamar fisik; maintenance belum mengurangi kapasitas.</p></div>
                 </div>
                 <?php if ($occupancyPoints === [] || $occupancy['summary']['room_count'] === 0): ?>
-                    <div class="marketing-empty-state" role="status"><span class="marketing-empty-icon" aria-hidden="true">○</span><strong>Belum ada kamar pada guesthouse yang dipilih</strong></div>
+                    <div class="marketing-empty-state" role="status"><span class="marketing-empty-icon" aria-hidden="true">○</span><strong>Belum ada kamar pada properti yang dipilih</strong></div>
                 <?php else: ?>
                     <div class="marketing-occupancy-chart-wrap">
                         <canvas id="marketingOccupancyChart"
@@ -349,4 +391,290 @@ $bookingWindow = $analytics['booking_window'];
     <div class="alert alert-light border small text-secondary mt-4 mb-0" role="note">
         <strong class="text-body">Definisi:</strong> cancelled tidak dihitung. Booking mengikuti grup booking; total malam pada tabel loyalitas memakai durasi menginap per booking sehingga kamar tambahan tidak menggandakan malam. Okupansi memakai kamar-malam per baris kamar dan memecah reservasi yang melewati bulan. Nominal adalah total reservasi dalam scope filter, bukan pembayaran diterima.
     </div>
+    <?php endif; ?>
+
+    <?php if ($isMonthly): ?>
+    <!-- ─── Kos-Specific Analytics ─── -->
+
+    <section class="mt-4" aria-labelledby="marketing-kos-kpi-heading">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+            <div>
+                <h3 class="h5 mb-1" id="marketing-kos-kpi-heading">Ringkasan operasional kos</h3>
+                <p class="text-secondary small mb-0">Data real-time berdasarkan kondisi hari ini · <?= esc($guesthouseLabel) ?></p>
+            </div>
+            <span class="badge rounded-pill text-bg-light border align-self-start align-self-md-center">Kos bulanan</span>
+        </div>
+
+        <div class="marketing-kpi-grid mb-4">
+            <article class="card stat-card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start gap-3">
+                        <div><small class="text-secondary">Rata-rata kamar kosong</small><div class="display-6 fw-semibold mt-2"><?= number_format($vacantDays['average_vacant_days'], 1, ',', '.') ?> <small class="fs-6">hari</small></div></div>
+                        <span class="marketing-kpi-icon is-guests" aria-hidden="true">⏱</span>
+                    </div>
+                    <p class="small text-secondary mb-0 mt-3">Rata-rata jeda antar pergantian penghuni (<?= $vacantDays['total_gaps'] ?> kali pergantian).</p>
+                </div>
+            </article>
+            <article class="card stat-card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start gap-3">
+                        <div><small class="text-secondary">Penghuni masuk</small><div class="display-6 fw-semibold mt-2 text-success"><?= $tenantTurnover['summary']['total_in'] ?></div></div>
+                        <span class="marketing-kpi-icon is-bookings" aria-hidden="true">↗</span>
+                    </div>
+                    <p class="small text-secondary mb-0 mt-3">Total penghuni baru masuk dalam <?= esc($periodLabel) ?>.</p>
+                </div>
+            </article>
+            <article class="card stat-card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start gap-3">
+                        <div><small class="text-secondary">Penghuni keluar</small><div class="display-6 fw-semibold mt-2 text-danger"><?= $tenantTurnover['summary']['total_out'] ?></div></div>
+                        <span class="marketing-kpi-icon is-quality" aria-hidden="true">↙</span>
+                    </div>
+                    <p class="small text-secondary mb-0 mt-3">Total penghuni keluar dalam <?= esc($periodLabel) ?>. Net: <strong class="<?= $tenantTurnover['summary']['net'] >= 0 ? 'text-success' : 'text-danger' ?>"><?= $tenantTurnover['summary']['net'] >= 0 ? '+' : '' ?><?= $tenantTurnover['summary']['net'] ?></strong></p>
+                </div>
+            </article>
+            <article class="card stat-card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start gap-3">
+                        <div><small class="text-secondary">Proyeksi sewa bulan depan</small><div class="fs-4 fw-semibold mt-2">Rp<?= number_format($committedRent['committed_rent'], 0, ',', '.') ?></div></div>
+                        <span class="marketing-kpi-icon is-bookings" aria-hidden="true">💰</span>
+                    </div>
+                    <p class="small text-secondary mb-0 mt-3"><?= $committedRent['committed_rooms'] ?> dari <?= $committedRent['total_rooms'] ?> kamar terisi (<?= number_format($committedRent['occupancy_rate'], 1, ',', '.') ?>%) untuk <?= esc($committedRent['next_month_label']) ?>.</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="mt-4" aria-labelledby="marketing-turnover-heading">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+            <div>
+                <h3 class="h5 mb-1" id="marketing-turnover-heading">Turnover penghuni (masuk vs keluar)</h3>
+                <p class="text-secondary small mb-0">Jumlah penghuni yang masuk dan keluar per bulan · <?= esc($periodLabel) ?></p>
+            </div>
+        </div>
+        <?php
+        $turnoverLabels = array_column($tenantTurnover['months'], 'label');
+        $turnoverIn = array_column($tenantTurnover['months'], 'in');
+        $turnoverOut = array_column($tenantTurnover['months'], 'out');
+        ?>
+        <article class="card border-0 shadow-sm marketing-chart-card">
+            <div class="card-body p-4">
+                <?php if (array_sum($turnoverIn) === 0 && array_sum($turnoverOut) === 0): ?>
+                    <div class="marketing-empty-state" role="status">
+                        <span class="marketing-empty-icon" aria-hidden="true">○</span>
+                        <strong>Belum ada data turnover</strong>
+                        <span>Tidak ada perpindahan penghuni pada periode ini.</span>
+                    </div>
+                <?php else: ?>
+                    <div style="height: 300px;">
+                        <canvas id="marketingTurnoverChart"
+                                role="img"
+                                aria-label="Grafik turnover penghuni masuk vs keluar per bulan"
+                                data-labels='<?= esc(json_encode($turnoverLabels, JSON_UNESCAPED_UNICODE), 'attr') ?>'
+                                data-in='<?= esc(json_encode($turnoverIn), 'attr') ?>'
+                                data-out='<?= esc(json_encode($turnoverOut), 'attr') ?>'></canvas>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </article>
+        <div class="row g-3 mt-1">
+            <?php foreach ($tenantTurnover['months'] as $tm): ?>
+                <div class="col-6 col-md-4 col-xl-2">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-3">
+                            <small class="text-secondary d-block"><?= esc($tm['label']) ?></small>
+                            <div class="d-flex gap-3 mt-1">
+                                <span class="text-success fw-semibold">↗ <?= $tm['in'] ?></span>
+                                <span class="text-danger fw-semibold">↙ <?= $tm['out'] ?></span>
+                            </div>
+                            <small class="text-secondary">Net: <strong class="<?= $tm['net'] >= 0 ? 'text-success' : 'text-danger' ?>"><?= $tm['net'] >= 0 ? '+' : '' ?><?= $tm['net'] ?></strong></small>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </section>
+
+    <section class="mt-4" aria-labelledby="marketing-committed-rent-heading">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+            <div>
+                <h3 class="h5 mb-1" id="marketing-committed-rent-heading">Proyeksi pendapatan sewa: <?= esc($committedRent['next_month_label']) ?></h3>
+                <p class="text-secondary small mb-0">Pendapatan sewa yang sudah terkunci dari kontrak aktif untuk bulan depan.</p>
+            </div>
+            <span class="badge rounded-pill text-bg-success align-self-start align-self-md-center"><?= $committedRent['committed_rooms'] ?> / <?= $committedRent['total_rooms'] ?> kamar terisi</span>
+        </div>
+
+        <article class="card border-0 shadow-sm">
+            <?php if ($committedRent['rooms'] === []): ?>
+                <div class="card-body p-4">
+                    <div class="marketing-empty-state" role="status">
+                        <span class="marketing-empty-icon" aria-hidden="true">○</span>
+                        <strong>Belum ada kamar terisi untuk bulan depan</strong>
+                        <span>Tidak ada kontrak aktif yang menjangkau <?= esc($committedRent['next_month_label']) ?>.</span>
+                    </div>
+                </div>
+            <?php else: ?>
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th scope="col">Kamar</th>
+                                <th scope="col">Penghuni</th>
+                                <th scope="col">Sewa berakhir</th>
+                                <th class="text-end" scope="col">Tarif bulanan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($committedRent['rooms'] as $cr): ?>
+                                <tr>
+                                    <td class="fw-semibold"><?= esc($cr['room_number']) ?></td>
+                                    <td><?= esc($cr['guest_name']) ?></td>
+                                    <td class="text-nowrap"><?= esc(date('d/m/Y', strtotime($cr['check_out_date']))) ?></td>
+                                    <td class="text-end text-nowrap fw-semibold">Rp<?= number_format($cr['monthly_rate'], 0, ',', '.') ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th colspan="3">Total proyeksi sewa <?= esc($committedRent['next_month_label']) ?></th>
+                                <th class="text-end text-nowrap text-primary">Rp<?= number_format($committedRent['committed_rent'], 0, ',', '.') ?></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </article>
+    </section>
+
+    <section class="mt-4" aria-labelledby="marketing-lease-expiry-heading">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+            <div>
+                <h3 class="h5 mb-1" id="marketing-lease-expiry-heading">Radar jatuh tempo sewa</h3>
+                <p class="text-secondary small mb-0">Kontrak aktif yang akan berakhir dalam 7 dan 30 hari ke depan. Segera konfirmasi perpanjangan atau siapkan kamar untuk penghuni baru.</p>
+            </div>
+            <div class="d-flex gap-2 align-self-start align-self-md-center">
+                <span class="badge rounded-pill <?= $leaseExpirations['count_7'] > 0 ? 'text-bg-danger' : 'text-bg-light border' ?>"><?= $leaseExpirations['count_7'] ?> dalam 7 hari</span>
+                <span class="badge rounded-pill <?= $leaseExpirations['count_30'] > 0 ? 'text-bg-warning' : 'text-bg-light border' ?>"><?= $leaseExpirations['count_30'] ?> dalam 30 hari</span>
+            </div>
+        </div>
+
+        <article class="card border-0 shadow-sm">
+            <?php if ($leaseExpirations['count_30'] === 0): ?>
+                <div class="card-body p-4">
+                    <div class="marketing-empty-state" role="status">
+                        <span class="marketing-empty-icon" aria-hidden="true">✓</span>
+                        <strong>Tidak ada sewa yang segera berakhir</strong>
+                        <span>Semua kontrak aktif masih berlaku lebih dari 30 hari ke depan.</span>
+                    </div>
+                </div>
+            <?php else: ?>
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th scope="col">Penghuni</th>
+                                <th scope="col">Kamar</th>
+                                <th scope="col">Lama sewa</th>
+                                <th scope="col">Tanggal keluar</th>
+                                <th class="text-end" scope="col">Sisa hari</th>
+                                <th class="text-end" scope="col">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($leaseExpirations['expiring_30'] as $le): ?>
+                                <?php
+                                $isUrgent = $le['days_left'] <= 7;
+                                $propName = session('activePropertyName') ?: 'Kos Mitra';
+                                $waText = "Halo Kak " . trim($le['guest_name']) . ", kami dari manajemen " . $propName . " ingin menginformasikan bahwa masa sewa kamar " . trim($le['room_number']) . " akan berakhir pada tanggal " . date('d/m/Y', strtotime($le['check_out_date'])) . ". Apakah Kakak berencana memperpanjang sewa?";
+                                $waLink = $le['wa_phone'] !== '' ? 'https://wa.me/' . $le['wa_phone'] . '?text=' . rawurlencode($waText) : '';
+                                ?>
+                                <tr class="<?= $isUrgent ? 'table-danger' : '' ?>">
+                                    <td>
+                                        <div class="fw-semibold"><?= esc($le['guest_name']) ?></div>
+                                        <small class="text-secondary"><?= esc($le['phone'] ?: '-') ?></small>
+                                    </td>
+                                    <td class="fw-semibold"><?= esc($le['room_number']) ?></td>
+                                    <td><?= $le['duration_months'] ?> bulan</td>
+                                    <td class="text-nowrap"><?= esc(date('d/m/Y', strtotime($le['check_out_date']))) ?></td>
+                                    <td class="text-end">
+                                        <span class="badge <?= $isUrgent ? 'text-bg-danger' : 'text-bg-warning' ?>"><?= $le['days_left'] ?> hari</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <?php if ($waLink !== ''): ?>
+                                            <a href="<?= esc($waLink, 'attr') ?>" target="_blank" rel="noopener" class="btn btn-sm btn-success" title="Hubungi via WhatsApp">
+                                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.116.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.116-.198-.012-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.808 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.13 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/></svg>
+                                                WA
+                                            </a>
+                                        <?php else: ?>
+                                            <span class="text-secondary small">-</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </article>
+    </section>
+
+    <section class="mt-4" aria-labelledby="marketing-vacant-rooms-heading">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+            <div>
+                <h3 class="h5 mb-1" id="marketing-vacant-rooms-heading">Status kekosongan kamar</h3>
+                <p class="text-secondary small mb-0">Detail per kamar: status terisi/kosong, rata-rata jeda antar penghuni, dan hari kosong saat ini.</p>
+            </div>
+        </div>
+
+        <article class="card border-0 shadow-sm">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Kamar</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Check-out terakhir</th>
+                            <th class="text-end" scope="col">Kosong saat ini</th>
+                            <th class="text-end" scope="col">Rata-rata jeda</th>
+                            <th class="text-end" scope="col">Total sewa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($vacantDays['rooms'] as $vr): ?>
+                            <tr>
+                                <td class="fw-semibold"><?= esc($vr['room_number']) ?></td>
+                                <td>
+                                    <?php if ($vr['currently_occupied']): ?>
+                                        <span class="badge text-bg-success">Terisi</span>
+                                    <?php elseif ($vr['total_tenancies'] > 0): ?>
+                                        <span class="badge text-bg-warning">Kosong</span>
+                                    <?php else: ?>
+                                        <span class="badge text-bg-secondary">Belum pernah disewa</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="text-nowrap"><?= $vr['last_checkout'] ? esc(date('d/m/Y', strtotime($vr['last_checkout']))) : '-' ?></td>
+                                <td class="text-end">
+                                    <?php if ($vr['vacant_days_current'] !== null): ?>
+                                        <span class="fw-semibold <?= $vr['vacant_days_current'] > 30 ? 'text-danger' : 'text-warning-emphasis' ?>"><?= $vr['vacant_days_current'] ?> hari</span>
+                                    <?php elseif ($vr['currently_occupied']): ?>
+                                        <span class="text-success">—</span>
+                                    <?php else: ?>
+                                        -
+                                    <?php endif; ?>
+                                </td>
+                                <td class="text-end"><?= $vr['average_gap'] > 0 ? number_format($vr['average_gap'], 1, ',', '.') . ' hari' : '-' ?></td>
+                                <td class="text-end"><?= $vr['total_tenancies'] ?> kali</td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </section>
+
+    <div class="alert alert-light border small text-secondary mt-4 mb-0" role="note">
+        <strong class="text-body">Definisi:</strong> Rata-rata kamar kosong dihitung dari jeda (gap) antar checkout penghuni lama dengan checkin penghuni baru. Turnover menghitung jumlah checkin (masuk) dan checkout (keluar) per bulan. Proyeksi sewa menampilkan kontrak aktif yang masih berlanjut ke bulan depan. Radar jatuh tempo menampilkan sewa yang akan berakhir dalam 7/30 hari agar manajemen bisa segera menindaklanjuti.
+    </div>
+    <?php endif; ?>
+
 </section>

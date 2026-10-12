@@ -14,21 +14,24 @@ final class ExtraBedService
 
     public function settings(): array
     {
-        $setting = $this->db->table('extra_bed_settings')->orderBy('id', 'ASC')->get()->getRowArray();
+        $setting = $this->db->table('extra_bed_settings')->where('property_id', PropertyContext::activeId())->get()->getRowArray();
         if ($setting !== null) {
             return $setting;
         }
 
         $now = date('Y-m-d H:i:s');
+        $defaultStock = PropertyContext::activeId() === PropertyContext::KOS_ID ? 0 : 5;
+        $stock = PropertyContext::activeId() === PropertyContext::HOMIQ_ID ? 7 : $defaultStock;
         $this->db->table('extra_bed_settings')->insert([
-            'total_stock' => 7,
+            'property_id' => PropertyContext::activeId(),
+            'total_stock' => $stock,
             'created_at' => $now,
             'updated_at' => $now,
         ]);
 
         return [
             'id' => (int) $this->db->insertID(),
-            'total_stock' => 7,
+            'total_stock' => $stock,
             'created_at' => $now,
             'updated_at' => $now,
         ];
@@ -40,6 +43,7 @@ final class ExtraBedService
         $allocationBuilder = $this->db->table('extra_bed_allocations')
             ->select('extra_bed_allocations.quantity, extra_bed_allocations.check_in_date, extra_bed_allocations.check_out_date')
             ->join('reservations', 'reservations.id = extra_bed_allocations.reservation_id')
+            ->where('reservations.property_id', PropertyContext::activeId())
             ->where('extra_bed_allocations.check_in_date <', $checkOut)
             ->where('extra_bed_allocations.check_out_date >', $checkIn)
             ->where('reservations.status !=', 'Cancelled');
@@ -74,7 +78,7 @@ final class ExtraBedService
         }
 
         $this->settings();
-        $this->db->query('SELECT id FROM extra_bed_settings ORDER BY id ASC LIMIT 1 FOR UPDATE');
+        $this->db->query('SELECT id FROM extra_bed_settings WHERE property_id = ? FOR UPDATE', [PropertyContext::activeId()]);
         $availability = $this->availability($checkIn, $checkOut, $excludeReservationIds);
         if ($quantity > $availability['available']) {
             throw new RuntimeException('EXTRA_BED_UNAVAILABLE:Hanya tersedia ' . $availability['available'] . ' Extra Bed untuk tanggal yang dipilih.');
@@ -84,7 +88,7 @@ final class ExtraBedService
     public function updateStock(int $totalStock): void
     {
         $setting = $this->settings();
-        $this->db->table('extra_bed_settings')->where('id', (int) $setting['id'])->update([
+        $this->db->table('extra_bed_settings')->where('id', (int) $setting['id'])->where('property_id', PropertyContext::activeId())->update([
             'total_stock' => max(0, $totalStock),
             'updated_at' => date('Y-m-d H:i:s'),
         ]);
@@ -95,6 +99,7 @@ final class ExtraBedService
         $allocations = $this->db->table('extra_bed_allocations')
             ->select('extra_bed_allocations.check_in_date, extra_bed_allocations.check_out_date, extra_bed_allocations.quantity')
             ->join('reservations', 'reservations.id = extra_bed_allocations.reservation_id')
+            ->where('reservations.property_id', PropertyContext::activeId())
             ->where('reservations.status !=', 'Cancelled')
             ->get()
             ->getResultArray();
@@ -141,6 +146,7 @@ final class ExtraBedService
             ->join('reservations', 'reservations.id = extra_bed_allocations.reservation_id')
             ->join('rooms', 'rooms.id = extra_bed_allocations.room_id')
             ->join('guests', 'guests.id = reservations.guest_id')
+            ->where('reservations.property_id', PropertyContext::activeId())
             ->where('reservations.status !=', 'Cancelled');
     }
 }

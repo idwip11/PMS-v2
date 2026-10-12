@@ -72,17 +72,51 @@
                 <thead class="table-light"><tr><th>Role</th><th>Akses utama</th></tr></thead>
                 <tbody>
                     <tr><td class="fw-semibold">Atmin</td><td>Superuser internal: semua menu, termasuk Settings dan Support.</td></tr>
-                    <tr><td class="fw-semibold">Admin</td><td>Dashboard, Analytics, Operasional, Front Desk, Housekeeping, Settings, dan Support. Nilai finansial Dashboard disensor.</td></tr>
-                    <tr><td class="fw-semibold">Manager</td><td>Dashboard, Finance, Analytics, Operasional, Front Desk, Housekeeping, dan Support.</td></tr>
+                    <tr><td class="fw-semibold">Admin</td><td>Dashboard, Analytics, Operasional, Front Desk, Housekeeping, Settings (dapat menambah user termasuk role Manager, namun tidak bisa mengedit atau menghapus user Manager), dan Support. Nilai finansial Dashboard disensor.</td></tr>
+                    <tr><td class="fw-semibold">Manager</td><td>Semua menu: Dashboard, Finance, Analytics, Operasional, Front Desk, Housekeeping, Settings (akses penuh kelola user: tambah, edit, dan hapus semua user), dan Support.</td></tr>
                     <tr><td class="fw-semibold">Finance</td><td>Dashboard, Finance, Analytics, Operasional, Front Desk, Housekeeping, dan Support.</td></tr>
                     <tr><td class="fw-semibold">Operational</td><td>Dashboard, Finance, Analytics, Operasional, Front Desk, Housekeeping, dan Support.</td></tr>
                     <tr><td class="fw-semibold">Marketing</td><td>Dashboard, Analytics, Front Desk, Housekeeping, dan Support.</td></tr>
                     <tr><td class="fw-semibold">Staff</td><td>Dashboard, Analytics, Front Desk, Housekeeping, dan Support. Nilai finansial Dashboard disensor.</td></tr>
-                    <tr><td class="fw-semibold">Housekeeping</td><td>Housekeeping saja; diarahkan langsung ke halaman tugas Housekeeping setelah login.</td></tr>
-                    <tr><td class="fw-semibold">Owner GH 1–5</td><td>Finance → Keuangan Owner/Investor untuk guesthouse miliknya saja. Tidak dapat membuka menu operasional umum.</td></tr>
+                    <tr><td class="fw-semibold">Owner GH 1–5</td><td>Finance → Keuangan Owner/Investor untuk guesthouse (HomiQ) miliknya saja. Tidak dapat membuka menu operasional umum.</td></tr>
+                    <tr><td class="fw-semibold">Owner Mitra</td><td>Finance → Keuangan Owner/Investor gabungan untuk Homestay Mitra &amp; Kos Mitra. Tidak dapat membuka menu operasional umum atau setup owner.</td></tr>
+                    <tr><td class="fw-semibold text-muted">Owner HS / Kos (Legacy)</td><td class="text-muted">Akses legacy single-properti mitra; disarankan diperbarui ke Owner Mitra berpasangan.</td></tr>
                 </tbody>
             </table>
         </div>
+        <div class="mt-3 p-3 bg-light rounded-2 border border-light-subtle small">
+            <div class="fw-semibold text-dark mb-1">Ketentuan Khusus Manajemen User (Menu Settings):</div>
+            <ul class="text-secondary mb-0 ps-3">
+                <li><strong>Role Manager:</strong> Memiliki akses penuh ke seluruh menu termasuk menu Settings. Dapat menambah user baru, serta bebas mengedit dan menghapus akun pengguna mana pun (termasuk sesama user ber-role Manager).</li>
+                <li><strong>Role Admin:</strong> Dapat mengakses menu Settings dan membuat user baru (termasuk membuat user ber-role Manager), namun <strong>tidak dapat mengedit maupun menghapus</strong> akun pengguna yang memiliki role Manager.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+        <h3 class="h5 mb-1">Aturan Bagi Hasil per Properti</h3>
+        <p class="text-secondary small mb-3">Persentase Owner diatur di Finance → Setup Owner. Sisa persentasenya menjadi fee kerja sama pengelola.</p>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead class="table-light"><tr><th>Properti</th><th>Dasar bagi hasil</th><th>Pendapatan Extra Bed</th></tr></thead>
+                <tbody>
+                    <tr><td class="fw-semibold">Adiputra Guesthouse by HomiQ</td><td>Laba bersih (total pendapatan dikurangi pengeluaran operasional). Bila laba nol/negatif, bagi hasil Rp0.</td><td>Hak pengelola, tidak masuk bagi hasil owner.</td></tr>
+                    <tr><td class="fw-semibold">Homestay Mitra</td><td><strong>Omzet eligible gabungan</strong> Homestay + Kos. Pengeluaran tetap dicatat di Dashboard dan laporan, tetapi tidak mengurangi bagi hasil.</td><td>Dasar owner gabungan.</td></tr>
+                    <tr><td class="fw-semibold">Kos Mitra</td><td><strong>Omzet eligible gabungan</strong> Homestay + Kos. Pengeluaran tetap dicatat di Dashboard dan laporan, tetapi tidak mengurangi bagi hasil.</td><td>Dasar owner gabungan.</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-3 p-3 bg-light rounded-2 border border-light-subtle small text-secondary">
+            <strong class="text-dark">Contoh (70% owner / 30% pengelola):</strong> omset Rp1.000.000, pengeluaran Rp500.000.
+            HomiQ → dasar Rp500.000 (owner Rp350.000, pengelola Rp150.000).
+            Mitra → dasar Rp1.000.000 (owner Rp700.000, pengelola Rp300.000).
+        </div>
+        <ul class="small text-secondary mb-0 mt-3 ps-3">
+            <li>Extra Bed / Biaya Extra Bed Homestay dan Kos menjadi dasar owner gabungan Mitra. Breakfast, Laundry, Massage, dan Sewa Kendaraan menjadi hak pengelola.</li>
+            <li>Homestay Mitra disewakan per rumah: kolom reservasi tampil sebagai <strong>Homestay: Mitra</strong>, bukan nomor kamar.</li>
+        </ul>
     </div>
 </div>
 

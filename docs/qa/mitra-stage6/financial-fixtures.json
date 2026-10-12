@@ -1,0 +1,64 @@
+{
+    "database": "homiq_pms_mitra_stage6_test_20261012_validate",
+    "checks": 70,
+    "fixture_prefix": "mitra-stage6-4be425a0de1b",
+    "general": {
+        "revenue": 2000,
+        "expenses": 2100,
+        "netProfit": -100,
+        "outstanding": 300
+    },
+    "owner": {
+        "incomeCategories": {
+            "Penyewaan": 1500,
+            "Extra Bed": 150,
+            "Charge Tamu": 150,
+            "Lain-lain": 0
+        },
+        "expenseCategories": {
+            "Kebutuhan Operasional Guesthouse": 2000,
+            "Kebutuhan Operasional Kos": 100
+        },
+        "sourceIncome": {
+            "2": 1200,
+            "3": 600
+        },
+        "totalIncome": 1800,
+        "totalExpense": 2100,
+        "netProfit": -300,
+        "shareBase": 1800,
+        "isMitraProperty": true,
+        "setupRequired": false,
+        "ownerName": "Owner Mitra Validasi",
+        "ownerSharePercentage": 33.33,
+        "managerFeePercentage": 66.67,
+        "investorShare": 599.94,
+        "managerShare": 1200.06
+    },
+    "availability": {
+        "valid": true,
+        "message": "Unit homestay sudah terisi atau maintenance pada tanggal yang dipilih.",
+        "rooms": [
+            {
+                "id": 1,
+                "available": false,
+                "reason": "Rumah sudah dibooking pada tanggal ini"
+            },
+            {
+                "id": 2,
+                "available": false,
+                "reason": "Rumah sudah dibooking pada tanggal ini"
+            },
+            {
+                "id": 3,
+                "available": false,
+                "reason": "Rumah sudah dibooking pada tanggal ini"
+            }
+        ],
+        "extra_beds": {
+            "total_stock": 5,
+            "rented": 0,
+            "available": 5
+        }
+    }
+}

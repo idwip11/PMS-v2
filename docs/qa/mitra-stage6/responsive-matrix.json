@@ -1,0 +1,4977 @@
+[
+  {
+    "page": "owner",
+    "device": "small-phone",
+    "modal": null,
+    "viewport": 320,
+    "documentWidth": 320,
+    "location": "/finance/owner",
+    "forms": [
+      {
+        "name": "month",
+        "width": 288
+      },
+      {
+        "name": "Tampilkan",
+        "width": 288
+      }
+    ],
+    "tables": [
+      {
+        "width": 288,
+        "content": 288
+      },
+      {
+        "width": 288,
+        "content": 668
+      }
+    ]
+  },
+  {
+    "page": "finance",
+    "device": "small-phone",
+    "modal": null,
+    "viewport": 320,
+    "documentWidth": 320,
+    "location": "/finance",
+    "forms": [
+      {
+        "name": "month",
+        "width": 288
+      },
+      {
+        "name": "Tampilkan",
+        "width": 288
+      }
+    ],
+    "tables": [
+      {
+        "width": 288,
+        "content": 816
+      }
+    ]
+  },
+  {
+    "page": "setup",
+    "device": "small-phone",
+    "modal": null,
+    "viewport": 320,
+    "documentWidth": 320,
+    "location": "/finance/owner-setup",
+    "forms": [
+      {
+        "name": "owner_name",
+        "width": 256
+      },
+      {
+        "name": "cooperation_fee_percentage",
+        "width": 256
+      },
+      {
+        "name": "Simpan Perubahan",
+        "width": 162
+      },
+      {
+        "name": "Hapus",
+        "width": 59
+      }
+    ],
+    "tables": [
+      {
+        "width": 288,
+        "content": 401
+      }
+    ]
+  },
+  {
+    "page": "settings",
+    "device": "small-phone",
+    "modal": null,
+    "viewport": 320,
+    "documentWidth": 320,
+    "location": "/settings",
+    "forms": [
+      {
+        "name": "username",
+        "width": 218
+      },
+      {
+        "name": "full_name",
+        "width": 256
+      },
+      {
+        "name": "property_id",
+        "width": 256
+      },
+      {
+        "name": "role",
+        "width": 256
+      },
+      {
+        "name": "password",
+        "width": 256
+      },
+      {
+        "name": "Tambah User",
+        "width": 170
+      },
+      {
+        "name": "",
+        "width": 288
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 224
+      },
+      {
+        "name": "password",
+        "width": 224
+      },
+      {
+        "name": "Simpan akun",
+        "width": 254
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 220
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Tambah akses",
+        "width": 220
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 224
+      },
+      {
+        "name": "password",
+        "width": 224
+      },
+      {
+        "name": "Simpan akun",
+        "width": 254
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 224
+      },
+      {
+        "name": "password",
+        "width": 224
+      },
+      {
+        "name": "Simpan akun",
+        "width": 254
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 220
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Tambah akses",
+        "width": 220
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 224
+      },
+      {
+        "name": "password",
+        "width": 224
+      },
+      {
+        "name": "Simpan akun",
+        "width": 254
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 220
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Tambah akses",
+        "width": 220
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 224
+      },
+      {
+        "name": "password",
+        "width": 224
+      },
+      {
+        "name": "Simpan akun",
+        "width": 254
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 220
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Tambah akses",
+        "width": 220
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 224
+      },
+      {
+        "name": "password",
+        "width": 224
+      },
+      {
+        "name": "Simpan akun",
+        "width": 254
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 220
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Tambah akses",
+        "width": 220
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 224
+      },
+      {
+        "name": "password",
+        "width": 224
+      },
+      {
+        "name": "Simpan akun",
+        "width": 254
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 220
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Tambah akses",
+        "width": 220
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 224
+      },
+      {
+        "name": "password",
+        "width": 224
+      },
+      {
+        "name": "Simpan akun",
+        "width": 254
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 220
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Tambah akses",
+        "width": 220
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 224
+      },
+      {
+        "name": "password",
+        "width": 224
+      },
+      {
+        "name": "Simpan akun",
+        "width": 254
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 220
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Tambah akses",
+        "width": 220
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 224
+      },
+      {
+        "name": "password",
+        "width": 224
+      },
+      {
+        "name": "Simpan akun",
+        "width": 254
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 220
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Tambah akses",
+        "width": 220
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 224
+      },
+      {
+        "name": "password",
+        "width": 224
+      },
+      {
+        "name": "Simpan akun",
+        "width": 254
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 220
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Tambah akses",
+        "width": 220
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 224
+      },
+      {
+        "name": "password",
+        "width": 224
+      },
+      {
+        "name": "Simpan akun",
+        "width": 254
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 224
+      },
+      {
+        "name": "password",
+        "width": 224
+      },
+      {
+        "name": "Simpan akun",
+        "width": 254
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 224
+      },
+      {
+        "name": "password",
+        "width": 224
+      },
+      {
+        "name": "Simpan akun",
+        "width": 254
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 220
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Tambah akses",
+        "width": 220
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 224
+      },
+      {
+        "name": "password",
+        "width": 224
+      },
+      {
+        "name": "Simpan akun",
+        "width": 254
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 220
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Tambah akses",
+        "width": 220
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 224
+      },
+      {
+        "name": "password",
+        "width": 224
+      },
+      {
+        "name": "Simpan akun",
+        "width": 254
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 220
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Tambah akses",
+        "width": 220
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 224
+      },
+      {
+        "name": "password",
+        "width": 224
+      },
+      {
+        "name": "Simpan akun",
+        "width": 254
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 220
+      },
+      {
+        "name": "role",
+        "width": 220
+      },
+      {
+        "name": "Tambah akses",
+        "width": 220
+      }
+    ],
+    "tables": []
+  },
+  {
+    "page": "booking",
+    "device": "small-phone",
+    "modal": {
+      "left": 8,
+      "right": 312,
+      "width": 304
+    },
+    "viewport": 320,
+    "documentWidth": 320,
+    "location": "/reservations",
+    "forms": [
+      {
+        "name": "q",
+        "width": 256
+      },
+      {
+        "name": "status",
+        "width": 256
+      },
+      {
+        "name": "source",
+        "width": 256
+      },
+      {
+        "name": "check_in_from",
+        "width": 256
+      },
+      {
+        "name": "check_in_to",
+        "width": 256
+      },
+      {
+        "name": "Tampilkan",
+        "width": 181
+      },
+      {
+        "name": "WA",
+        "width": 40
+      },
+      {
+        "name": "Extend",
+        "width": 63
+      },
+      {
+        "name": "Detail",
+        "width": 55
+      },
+      {
+        "name": "WA",
+        "width": 40
+      },
+      {
+        "name": "Extend",
+        "width": 63
+      },
+      {
+        "name": "Detail",
+        "width": 55
+      }
+    ],
+    "tables": [
+      {
+        "width": 288,
+        "content": 1408
+      }
+    ]
+  },
+  {
+    "page": "holding",
+    "device": "small-phone",
+    "modal": null,
+    "viewport": 320,
+    "documentWidth": 320,
+    "location": "/finance/company",
+    "forms": [
+      {
+        "name": "month",
+        "width": 183
+      },
+      {
+        "name": "Terapkan",
+        "width": 97
+      },
+      {
+        "name": "Refresh",
+        "width": 72
+      }
+    ],
+    "tables": [
+      {
+        "width": 288,
+        "content": 836
+      }
+    ]
+  },
+  {
+    "page": "owner",
+    "device": "phone",
+    "modal": null,
+    "viewport": 390,
+    "documentWidth": 390,
+    "location": "/finance/owner",
+    "forms": [
+      {
+        "name": "month",
+        "width": 358
+      },
+      {
+        "name": "Tampilkan",
+        "width": 358
+      }
+    ],
+    "tables": [
+      {
+        "width": 358,
+        "content": 358
+      },
+      {
+        "width": 358,
+        "content": 668
+      }
+    ]
+  },
+  {
+    "page": "finance",
+    "device": "phone",
+    "modal": null,
+    "viewport": 390,
+    "documentWidth": 390,
+    "location": "/finance",
+    "forms": [
+      {
+        "name": "month",
+        "width": 358
+      },
+      {
+        "name": "Tampilkan",
+        "width": 358
+      }
+    ],
+    "tables": [
+      {
+        "width": 358,
+        "content": 816
+      }
+    ]
+  },
+  {
+    "page": "setup",
+    "device": "phone",
+    "modal": null,
+    "viewport": 390,
+    "documentWidth": 390,
+    "location": "/finance/owner-setup",
+    "forms": [
+      {
+        "name": "owner_name",
+        "width": 326
+      },
+      {
+        "name": "cooperation_fee_percentage",
+        "width": 326
+      },
+      {
+        "name": "Simpan Perubahan",
+        "width": 162
+      },
+      {
+        "name": "Hapus",
+        "width": 59
+      }
+    ],
+    "tables": [
+      {
+        "width": 358,
+        "content": 401
+      }
+    ]
+  },
+  {
+    "page": "settings",
+    "device": "phone",
+    "modal": null,
+    "viewport": 390,
+    "documentWidth": 390,
+    "location": "/settings",
+    "forms": [
+      {
+        "name": "username",
+        "width": 288
+      },
+      {
+        "name": "full_name",
+        "width": 326
+      },
+      {
+        "name": "property_id",
+        "width": 326
+      },
+      {
+        "name": "role",
+        "width": 326
+      },
+      {
+        "name": "password",
+        "width": 326
+      },
+      {
+        "name": "Tambah User",
+        "width": 170
+      },
+      {
+        "name": "",
+        "width": 320
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 294
+      },
+      {
+        "name": "password",
+        "width": 294
+      },
+      {
+        "name": "Simpan akun",
+        "width": 324
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 290
+      },
+      {
+        "name": "role",
+        "width": 290
+      },
+      {
+        "name": "Tambah akses",
+        "width": 290
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 294
+      },
+      {
+        "name": "password",
+        "width": 294
+      },
+      {
+        "name": "Simpan akun",
+        "width": 324
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 294
+      },
+      {
+        "name": "password",
+        "width": 294
+      },
+      {
+        "name": "Simpan akun",
+        "width": 324
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 290
+      },
+      {
+        "name": "role",
+        "width": 290
+      },
+      {
+        "name": "Tambah akses",
+        "width": 290
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 294
+      },
+      {
+        "name": "password",
+        "width": 294
+      },
+      {
+        "name": "Simpan akun",
+        "width": 324
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 290
+      },
+      {
+        "name": "role",
+        "width": 290
+      },
+      {
+        "name": "Tambah akses",
+        "width": 290
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 294
+      },
+      {
+        "name": "password",
+        "width": 294
+      },
+      {
+        "name": "Simpan akun",
+        "width": 324
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 290
+      },
+      {
+        "name": "role",
+        "width": 290
+      },
+      {
+        "name": "Tambah akses",
+        "width": 290
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 294
+      },
+      {
+        "name": "password",
+        "width": 294
+      },
+      {
+        "name": "Simpan akun",
+        "width": 324
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 290
+      },
+      {
+        "name": "role",
+        "width": 290
+      },
+      {
+        "name": "Tambah akses",
+        "width": 290
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 294
+      },
+      {
+        "name": "password",
+        "width": 294
+      },
+      {
+        "name": "Simpan akun",
+        "width": 324
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 290
+      },
+      {
+        "name": "role",
+        "width": 290
+      },
+      {
+        "name": "Tambah akses",
+        "width": 290
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 294
+      },
+      {
+        "name": "password",
+        "width": 294
+      },
+      {
+        "name": "Simpan akun",
+        "width": 324
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 290
+      },
+      {
+        "name": "role",
+        "width": 290
+      },
+      {
+        "name": "Tambah akses",
+        "width": 290
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 294
+      },
+      {
+        "name": "password",
+        "width": 294
+      },
+      {
+        "name": "Simpan akun",
+        "width": 324
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 290
+      },
+      {
+        "name": "role",
+        "width": 290
+      },
+      {
+        "name": "Tambah akses",
+        "width": 290
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 294
+      },
+      {
+        "name": "password",
+        "width": 294
+      },
+      {
+        "name": "Simpan akun",
+        "width": 324
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 290
+      },
+      {
+        "name": "role",
+        "width": 290
+      },
+      {
+        "name": "Tambah akses",
+        "width": 290
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 294
+      },
+      {
+        "name": "password",
+        "width": 294
+      },
+      {
+        "name": "Simpan akun",
+        "width": 324
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 290
+      },
+      {
+        "name": "role",
+        "width": 290
+      },
+      {
+        "name": "Tambah akses",
+        "width": 290
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 294
+      },
+      {
+        "name": "password",
+        "width": 294
+      },
+      {
+        "name": "Simpan akun",
+        "width": 324
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 294
+      },
+      {
+        "name": "password",
+        "width": 294
+      },
+      {
+        "name": "Simpan akun",
+        "width": 324
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 294
+      },
+      {
+        "name": "password",
+        "width": 294
+      },
+      {
+        "name": "Simpan akun",
+        "width": 324
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 290
+      },
+      {
+        "name": "role",
+        "width": 290
+      },
+      {
+        "name": "Tambah akses",
+        "width": 290
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 294
+      },
+      {
+        "name": "password",
+        "width": 294
+      },
+      {
+        "name": "Simpan akun",
+        "width": 324
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 290
+      },
+      {
+        "name": "role",
+        "width": 290
+      },
+      {
+        "name": "Tambah akses",
+        "width": 290
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 294
+      },
+      {
+        "name": "password",
+        "width": 294
+      },
+      {
+        "name": "Simpan akun",
+        "width": 324
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 290
+      },
+      {
+        "name": "role",
+        "width": 290
+      },
+      {
+        "name": "Tambah akses",
+        "width": 290
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 294
+      },
+      {
+        "name": "password",
+        "width": 294
+      },
+      {
+        "name": "Simpan akun",
+        "width": 324
+      },
+      {
+        "name": "role",
+        "width": 195
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 290
+      },
+      {
+        "name": "role",
+        "width": 290
+      },
+      {
+        "name": "Tambah akses",
+        "width": 290
+      }
+    ],
+    "tables": []
+  },
+  {
+    "page": "booking",
+    "device": "phone",
+    "modal": {
+      "left": 8,
+      "right": 382,
+      "width": 374
+    },
+    "viewport": 390,
+    "documentWidth": 390,
+    "location": "/reservations",
+    "forms": [
+      {
+        "name": "q",
+        "width": 326
+      },
+      {
+        "name": "status",
+        "width": 326
+      },
+      {
+        "name": "source",
+        "width": 326
+      },
+      {
+        "name": "check_in_from",
+        "width": 326
+      },
+      {
+        "name": "check_in_to",
+        "width": 326
+      },
+      {
+        "name": "Tampilkan",
+        "width": 251
+      },
+      {
+        "name": "WA",
+        "width": 40
+      },
+      {
+        "name": "Extend",
+        "width": 63
+      },
+      {
+        "name": "Detail",
+        "width": 55
+      },
+      {
+        "name": "WA",
+        "width": 40
+      },
+      {
+        "name": "Extend",
+        "width": 63
+      },
+      {
+        "name": "Detail",
+        "width": 55
+      }
+    ],
+    "tables": [
+      {
+        "width": 358,
+        "content": 1408
+      }
+    ]
+  },
+  {
+    "page": "holding",
+    "device": "phone",
+    "modal": null,
+    "viewport": 390,
+    "documentWidth": 390,
+    "location": "/finance/company",
+    "forms": [
+      {
+        "name": "month",
+        "width": 183
+      },
+      {
+        "name": "Terapkan",
+        "width": 97
+      },
+      {
+        "name": "Refresh",
+        "width": 72
+      }
+    ],
+    "tables": [
+      {
+        "width": 358,
+        "content": 836
+      }
+    ]
+  },
+  {
+    "page": "owner",
+    "device": "tablet",
+    "modal": null,
+    "viewport": 768,
+    "documentWidth": 768,
+    "location": "/finance/owner",
+    "forms": [
+      {
+        "name": "month",
+        "width": 214
+      },
+      {
+        "name": "Tampilkan",
+        "width": 99
+      }
+    ],
+    "tables": [
+      {
+        "width": 720,
+        "content": 720
+      },
+      {
+        "width": 720,
+        "content": 720
+      }
+    ]
+  },
+  {
+    "page": "finance",
+    "device": "tablet",
+    "modal": null,
+    "viewport": 768,
+    "documentWidth": 768,
+    "location": "/finance",
+    "forms": [
+      {
+        "name": "month",
+        "width": 191
+      },
+      {
+        "name": "Tampilkan",
+        "width": 99
+      }
+    ],
+    "tables": [
+      {
+        "width": 720,
+        "content": 816
+      }
+    ]
+  },
+  {
+    "page": "setup",
+    "device": "tablet",
+    "modal": null,
+    "viewport": 768,
+    "documentWidth": 768,
+    "location": "/finance/owner-setup",
+    "forms": [
+      {
+        "name": "owner_name",
+        "width": 271
+      },
+      {
+        "name": "cooperation_fee_percentage",
+        "width": 156
+      },
+      {
+        "name": "Simpan Perubahan",
+        "width": 162
+      },
+      {
+        "name": "Hapus",
+        "width": 59
+      }
+    ],
+    "tables": [
+      {
+        "width": 720,
+        "content": 720
+      }
+    ]
+  },
+  {
+    "page": "settings",
+    "device": "tablet",
+    "modal": null,
+    "viewport": 768,
+    "documentWidth": 768,
+    "location": "/settings",
+    "forms": [
+      {
+        "name": "username",
+        "width": 290
+      },
+      {
+        "name": "full_name",
+        "width": 328
+      },
+      {
+        "name": "property_id",
+        "width": 328
+      },
+      {
+        "name": "role",
+        "width": 328
+      },
+      {
+        "name": "password",
+        "width": 328
+      },
+      {
+        "name": "Tambah User",
+        "width": 170
+      },
+      {
+        "name": "",
+        "width": 320
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 297
+      },
+      {
+        "name": "password",
+        "width": 297
+      },
+      {
+        "name": "Simpan akun",
+        "width": 670
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 260
+      },
+      {
+        "name": "role",
+        "width": 260
+      },
+      {
+        "name": "Tambah akses",
+        "width": 99
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 297
+      },
+      {
+        "name": "password",
+        "width": 297
+      },
+      {
+        "name": "Simpan akun",
+        "width": 670
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 297
+      },
+      {
+        "name": "password",
+        "width": 297
+      },
+      {
+        "name": "Simpan akun",
+        "width": 670
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 260
+      },
+      {
+        "name": "role",
+        "width": 260
+      },
+      {
+        "name": "Tambah akses",
+        "width": 99
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 297
+      },
+      {
+        "name": "password",
+        "width": 297
+      },
+      {
+        "name": "Simpan akun",
+        "width": 670
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 260
+      },
+      {
+        "name": "role",
+        "width": 260
+      },
+      {
+        "name": "Tambah akses",
+        "width": 99
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 297
+      },
+      {
+        "name": "password",
+        "width": 297
+      },
+      {
+        "name": "Simpan akun",
+        "width": 670
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 260
+      },
+      {
+        "name": "role",
+        "width": 260
+      },
+      {
+        "name": "Tambah akses",
+        "width": 99
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 297
+      },
+      {
+        "name": "password",
+        "width": 297
+      },
+      {
+        "name": "Simpan akun",
+        "width": 670
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 260
+      },
+      {
+        "name": "role",
+        "width": 260
+      },
+      {
+        "name": "Tambah akses",
+        "width": 99
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 297
+      },
+      {
+        "name": "password",
+        "width": 297
+      },
+      {
+        "name": "Simpan akun",
+        "width": 670
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 260
+      },
+      {
+        "name": "role",
+        "width": 260
+      },
+      {
+        "name": "Tambah akses",
+        "width": 99
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 297
+      },
+      {
+        "name": "password",
+        "width": 297
+      },
+      {
+        "name": "Simpan akun",
+        "width": 670
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 260
+      },
+      {
+        "name": "role",
+        "width": 260
+      },
+      {
+        "name": "Tambah akses",
+        "width": 99
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 297
+      },
+      {
+        "name": "password",
+        "width": 297
+      },
+      {
+        "name": "Simpan akun",
+        "width": 670
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 260
+      },
+      {
+        "name": "role",
+        "width": 260
+      },
+      {
+        "name": "Tambah akses",
+        "width": 99
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 297
+      },
+      {
+        "name": "password",
+        "width": 297
+      },
+      {
+        "name": "Simpan akun",
+        "width": 670
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 260
+      },
+      {
+        "name": "role",
+        "width": 260
+      },
+      {
+        "name": "Tambah akses",
+        "width": 99
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 297
+      },
+      {
+        "name": "password",
+        "width": 297
+      },
+      {
+        "name": "Simpan akun",
+        "width": 670
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 260
+      },
+      {
+        "name": "role",
+        "width": 260
+      },
+      {
+        "name": "Tambah akses",
+        "width": 99
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 297
+      },
+      {
+        "name": "password",
+        "width": 297
+      },
+      {
+        "name": "Simpan akun",
+        "width": 670
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 297
+      },
+      {
+        "name": "password",
+        "width": 297
+      },
+      {
+        "name": "Simpan akun",
+        "width": 670
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 297
+      },
+      {
+        "name": "password",
+        "width": 297
+      },
+      {
+        "name": "Simpan akun",
+        "width": 670
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 260
+      },
+      {
+        "name": "role",
+        "width": 260
+      },
+      {
+        "name": "Tambah akses",
+        "width": 99
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 297
+      },
+      {
+        "name": "password",
+        "width": 297
+      },
+      {
+        "name": "Simpan akun",
+        "width": 670
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 260
+      },
+      {
+        "name": "role",
+        "width": 260
+      },
+      {
+        "name": "Tambah akses",
+        "width": 99
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 297
+      },
+      {
+        "name": "password",
+        "width": 297
+      },
+      {
+        "name": "Simpan akun",
+        "width": 670
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 260
+      },
+      {
+        "name": "role",
+        "width": 260
+      },
+      {
+        "name": "Tambah akses",
+        "width": 99
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 297
+      },
+      {
+        "name": "password",
+        "width": 297
+      },
+      {
+        "name": "Simpan akun",
+        "width": 670
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 260
+      },
+      {
+        "name": "role",
+        "width": 260
+      },
+      {
+        "name": "Tambah akses",
+        "width": 99
+      }
+    ],
+    "tables": []
+  },
+  {
+    "page": "booking",
+    "device": "tablet",
+    "modal": {
+      "left": 16,
+      "right": 752,
+      "width": 736
+    },
+    "viewport": 768,
+    "documentWidth": 768,
+    "location": "/reservations",
+    "forms": [
+      {
+        "name": "q",
+        "width": 672
+      },
+      {
+        "name": "status",
+        "width": 328
+      },
+      {
+        "name": "source",
+        "width": 328
+      },
+      {
+        "name": "check_in_from",
+        "width": 328
+      },
+      {
+        "name": "check_in_to",
+        "width": 328
+      },
+      {
+        "name": "Tampilkan",
+        "width": 253
+      },
+      {
+        "name": "WA",
+        "width": 40
+      },
+      {
+        "name": "Extend",
+        "width": 63
+      },
+      {
+        "name": "Detail",
+        "width": 55
+      },
+      {
+        "name": "WA",
+        "width": 40
+      },
+      {
+        "name": "Extend",
+        "width": 63
+      },
+      {
+        "name": "Detail",
+        "width": 55
+      }
+    ],
+    "tables": [
+      {
+        "width": 720,
+        "content": 1408
+      }
+    ]
+  },
+  {
+    "page": "holding",
+    "device": "tablet",
+    "modal": null,
+    "viewport": 768,
+    "documentWidth": 768,
+    "location": "/finance/company",
+    "forms": [
+      {
+        "name": "month",
+        "width": 183
+      },
+      {
+        "name": "Terapkan",
+        "width": 97
+      },
+      {
+        "name": "Refresh",
+        "width": 72
+      }
+    ],
+    "tables": [
+      {
+        "width": 720,
+        "content": 836
+      }
+    ]
+  },
+  {
+    "page": "owner",
+    "device": "tablet-landscape",
+    "modal": null,
+    "viewport": 1024,
+    "documentWidth": 1024,
+    "location": "/finance/owner",
+    "forms": [
+      {
+        "name": "month",
+        "width": 214
+      },
+      {
+        "name": "Tampilkan",
+        "width": 99
+      }
+    ],
+    "tables": [
+      {
+        "width": 928,
+        "content": 928
+      },
+      {
+        "width": 928,
+        "content": 928
+      }
+    ]
+  },
+  {
+    "page": "finance",
+    "device": "tablet-landscape",
+    "modal": null,
+    "viewport": 1024,
+    "documentWidth": 1024,
+    "location": "/finance",
+    "forms": [
+      {
+        "name": "month",
+        "width": 191
+      },
+      {
+        "name": "Tampilkan",
+        "width": 99
+      }
+    ],
+    "tables": [
+      {
+        "width": 928,
+        "content": 928
+      }
+    ]
+  },
+  {
+    "page": "setup",
+    "device": "tablet-landscape",
+    "modal": null,
+    "viewport": 1024,
+    "documentWidth": 1024,
+    "location": "/finance/owner-setup",
+    "forms": [
+      {
+        "name": "owner_name",
+        "width": 357
+      },
+      {
+        "name": "cooperation_fee_percentage",
+        "width": 208
+      },
+      {
+        "name": "Simpan Perubahan",
+        "width": 162
+      },
+      {
+        "name": "Hapus",
+        "width": 59
+      }
+    ],
+    "tables": [
+      {
+        "width": 928,
+        "content": 928
+      }
+    ]
+  },
+  {
+    "page": "settings",
+    "device": "tablet-landscape",
+    "modal": null,
+    "viewport": 1024,
+    "documentWidth": 1024,
+    "location": "/settings",
+    "forms": [
+      {
+        "name": "username",
+        "width": 394
+      },
+      {
+        "name": "full_name",
+        "width": 432
+      },
+      {
+        "name": "property_id",
+        "width": 432
+      },
+      {
+        "name": "role",
+        "width": 432
+      },
+      {
+        "name": "password",
+        "width": 432
+      },
+      {
+        "name": "Tambah User",
+        "width": 170
+      },
+      {
+        "name": "",
+        "width": 320
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 401
+      },
+      {
+        "name": "password",
+        "width": 401
+      },
+      {
+        "name": "Simpan akun",
+        "width": 878
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 347
+      },
+      {
+        "name": "role",
+        "width": 347
+      },
+      {
+        "name": "Tambah akses",
+        "width": 134
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 401
+      },
+      {
+        "name": "password",
+        "width": 401
+      },
+      {
+        "name": "Simpan akun",
+        "width": 878
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 401
+      },
+      {
+        "name": "password",
+        "width": 401
+      },
+      {
+        "name": "Simpan akun",
+        "width": 878
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 347
+      },
+      {
+        "name": "role",
+        "width": 347
+      },
+      {
+        "name": "Tambah akses",
+        "width": 134
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 401
+      },
+      {
+        "name": "password",
+        "width": 401
+      },
+      {
+        "name": "Simpan akun",
+        "width": 878
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 347
+      },
+      {
+        "name": "role",
+        "width": 347
+      },
+      {
+        "name": "Tambah akses",
+        "width": 134
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 401
+      },
+      {
+        "name": "password",
+        "width": 401
+      },
+      {
+        "name": "Simpan akun",
+        "width": 878
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 347
+      },
+      {
+        "name": "role",
+        "width": 347
+      },
+      {
+        "name": "Tambah akses",
+        "width": 134
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 401
+      },
+      {
+        "name": "password",
+        "width": 401
+      },
+      {
+        "name": "Simpan akun",
+        "width": 878
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 347
+      },
+      {
+        "name": "role",
+        "width": 347
+      },
+      {
+        "name": "Tambah akses",
+        "width": 134
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 401
+      },
+      {
+        "name": "password",
+        "width": 401
+      },
+      {
+        "name": "Simpan akun",
+        "width": 878
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 347
+      },
+      {
+        "name": "role",
+        "width": 347
+      },
+      {
+        "name": "Tambah akses",
+        "width": 134
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 401
+      },
+      {
+        "name": "password",
+        "width": 401
+      },
+      {
+        "name": "Simpan akun",
+        "width": 878
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 347
+      },
+      {
+        "name": "role",
+        "width": 347
+      },
+      {
+        "name": "Tambah akses",
+        "width": 134
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 401
+      },
+      {
+        "name": "password",
+        "width": 401
+      },
+      {
+        "name": "Simpan akun",
+        "width": 878
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 347
+      },
+      {
+        "name": "role",
+        "width": 347
+      },
+      {
+        "name": "Tambah akses",
+        "width": 134
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 401
+      },
+      {
+        "name": "password",
+        "width": 401
+      },
+      {
+        "name": "Simpan akun",
+        "width": 878
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 347
+      },
+      {
+        "name": "role",
+        "width": 347
+      },
+      {
+        "name": "Tambah akses",
+        "width": 134
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 401
+      },
+      {
+        "name": "password",
+        "width": 401
+      },
+      {
+        "name": "Simpan akun",
+        "width": 878
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 347
+      },
+      {
+        "name": "role",
+        "width": 347
+      },
+      {
+        "name": "Tambah akses",
+        "width": 134
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 401
+      },
+      {
+        "name": "password",
+        "width": 401
+      },
+      {
+        "name": "Simpan akun",
+        "width": 878
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 401
+      },
+      {
+        "name": "password",
+        "width": 401
+      },
+      {
+        "name": "Simpan akun",
+        "width": 878
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 401
+      },
+      {
+        "name": "password",
+        "width": 401
+      },
+      {
+        "name": "Simpan akun",
+        "width": 878
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 347
+      },
+      {
+        "name": "role",
+        "width": 347
+      },
+      {
+        "name": "Tambah akses",
+        "width": 134
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 401
+      },
+      {
+        "name": "password",
+        "width": 401
+      },
+      {
+        "name": "Simpan akun",
+        "width": 878
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 347
+      },
+      {
+        "name": "role",
+        "width": 347
+      },
+      {
+        "name": "Tambah akses",
+        "width": 134
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 401
+      },
+      {
+        "name": "password",
+        "width": 401
+      },
+      {
+        "name": "Simpan akun",
+        "width": 878
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 347
+      },
+      {
+        "name": "role",
+        "width": 347
+      },
+      {
+        "name": "Tambah akses",
+        "width": 134
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 401
+      },
+      {
+        "name": "password",
+        "width": 401
+      },
+      {
+        "name": "Simpan akun",
+        "width": 878
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 347
+      },
+      {
+        "name": "role",
+        "width": 347
+      },
+      {
+        "name": "Tambah akses",
+        "width": 134
+      }
+    ],
+    "tables": []
+  },
+  {
+    "page": "booking",
+    "device": "tablet-landscape",
+    "modal": {
+      "left": 16,
+      "right": 1008,
+      "width": 992
+    },
+    "viewport": 1024,
+    "documentWidth": 1024,
+    "location": "/reservations",
+    "forms": [
+      {
+        "name": "q",
+        "width": 880
+      },
+      {
+        "name": "status",
+        "width": 432
+      },
+      {
+        "name": "source",
+        "width": 432
+      },
+      {
+        "name": "check_in_from",
+        "width": 432
+      },
+      {
+        "name": "check_in_to",
+        "width": 432
+      },
+      {
+        "name": "Tampilkan",
+        "width": 357
+      },
+      {
+        "name": "WA",
+        "width": 40
+      },
+      {
+        "name": "Extend",
+        "width": 63
+      },
+      {
+        "name": "Detail",
+        "width": 55
+      },
+      {
+        "name": "WA",
+        "width": 40
+      },
+      {
+        "name": "Extend",
+        "width": 63
+      },
+      {
+        "name": "Detail",
+        "width": 55
+      }
+    ],
+    "tables": [
+      {
+        "width": 928,
+        "content": 1408
+      }
+    ]
+  },
+  {
+    "page": "holding",
+    "device": "tablet-landscape",
+    "modal": null,
+    "viewport": 1024,
+    "documentWidth": 1024,
+    "location": "/finance/company",
+    "forms": [
+      {
+        "name": "month",
+        "width": 183
+      },
+      {
+        "name": "Terapkan",
+        "width": 97
+      },
+      {
+        "name": "Refresh",
+        "width": 72
+      }
+    ],
+    "tables": [
+      {
+        "width": 928,
+        "content": 928
+      }
+    ]
+  },
+  {
+    "page": "owner",
+    "device": "desktop",
+    "modal": null,
+    "viewport": 1440,
+    "documentWidth": 1440,
+    "location": "/finance/owner",
+    "forms": [
+      {
+        "name": "month",
+        "width": 214
+      },
+      {
+        "name": "Tampilkan",
+        "width": 99
+      }
+    ],
+    "tables": [
+      {
+        "width": 1064,
+        "content": 1064
+      },
+      {
+        "width": 1064,
+        "content": 1064
+      }
+    ]
+  },
+  {
+    "page": "finance",
+    "device": "desktop",
+    "modal": null,
+    "viewport": 1440,
+    "documentWidth": 1440,
+    "location": "/finance",
+    "forms": [
+      {
+        "name": "month",
+        "width": 191
+      },
+      {
+        "name": "Tampilkan",
+        "width": 99
+      }
+    ],
+    "tables": [
+      {
+        "width": 1064,
+        "content": 1064
+      }
+    ]
+  },
+  {
+    "page": "setup",
+    "device": "desktop",
+    "modal": null,
+    "viewport": 1440,
+    "documentWidth": 1440,
+    "location": "/finance/owner-setup",
+    "forms": [
+      {
+        "name": "owner_name",
+        "width": 414
+      },
+      {
+        "name": "cooperation_fee_percentage",
+        "width": 242
+      },
+      {
+        "name": "Simpan Perubahan",
+        "width": 162
+      },
+      {
+        "name": "Hapus",
+        "width": 59
+      }
+    ],
+    "tables": [
+      {
+        "width": 1064,
+        "content": 1064
+      }
+    ]
+  },
+  {
+    "page": "settings",
+    "device": "desktop",
+    "modal": null,
+    "viewport": 1440,
+    "documentWidth": 1440,
+    "location": "/settings",
+    "forms": [
+      {
+        "name": "username",
+        "width": 290
+      },
+      {
+        "name": "full_name",
+        "width": 328
+      },
+      {
+        "name": "property_id",
+        "width": 328
+      },
+      {
+        "name": "role",
+        "width": 500
+      },
+      {
+        "name": "password",
+        "width": 500
+      },
+      {
+        "name": "Tambah User",
+        "width": 170
+      },
+      {
+        "name": "",
+        "width": 320
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 383
+      },
+      {
+        "name": "password",
+        "width": 383
+      },
+      {
+        "name": "Simpan akun",
+        "width": 156
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 404
+      },
+      {
+        "name": "role",
+        "width": 404
+      },
+      {
+        "name": "Tambah akses",
+        "width": 157
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 383
+      },
+      {
+        "name": "password",
+        "width": 383
+      },
+      {
+        "name": "Simpan akun",
+        "width": 156
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 383
+      },
+      {
+        "name": "password",
+        "width": 383
+      },
+      {
+        "name": "Simpan akun",
+        "width": 156
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 404
+      },
+      {
+        "name": "role",
+        "width": 404
+      },
+      {
+        "name": "Tambah akses",
+        "width": 157
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 383
+      },
+      {
+        "name": "password",
+        "width": 383
+      },
+      {
+        "name": "Simpan akun",
+        "width": 156
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 404
+      },
+      {
+        "name": "role",
+        "width": 404
+      },
+      {
+        "name": "Tambah akses",
+        "width": 157
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 383
+      },
+      {
+        "name": "password",
+        "width": 383
+      },
+      {
+        "name": "Simpan akun",
+        "width": 156
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 404
+      },
+      {
+        "name": "role",
+        "width": 404
+      },
+      {
+        "name": "Tambah akses",
+        "width": 157
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 383
+      },
+      {
+        "name": "password",
+        "width": 383
+      },
+      {
+        "name": "Simpan akun",
+        "width": 156
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 404
+      },
+      {
+        "name": "role",
+        "width": 404
+      },
+      {
+        "name": "Tambah akses",
+        "width": 157
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 383
+      },
+      {
+        "name": "password",
+        "width": 383
+      },
+      {
+        "name": "Simpan akun",
+        "width": 156
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 404
+      },
+      {
+        "name": "role",
+        "width": 404
+      },
+      {
+        "name": "Tambah akses",
+        "width": 157
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 383
+      },
+      {
+        "name": "password",
+        "width": 383
+      },
+      {
+        "name": "Simpan akun",
+        "width": 156
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 404
+      },
+      {
+        "name": "role",
+        "width": 404
+      },
+      {
+        "name": "Tambah akses",
+        "width": 157
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 383
+      },
+      {
+        "name": "password",
+        "width": 383
+      },
+      {
+        "name": "Simpan akun",
+        "width": 156
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 404
+      },
+      {
+        "name": "role",
+        "width": 404
+      },
+      {
+        "name": "Tambah akses",
+        "width": 157
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 383
+      },
+      {
+        "name": "password",
+        "width": 383
+      },
+      {
+        "name": "Simpan akun",
+        "width": 156
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 404
+      },
+      {
+        "name": "role",
+        "width": 404
+      },
+      {
+        "name": "Tambah akses",
+        "width": 157
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 383
+      },
+      {
+        "name": "password",
+        "width": 383
+      },
+      {
+        "name": "Simpan akun",
+        "width": 156
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 404
+      },
+      {
+        "name": "role",
+        "width": 404
+      },
+      {
+        "name": "Tambah akses",
+        "width": 157
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 383
+      },
+      {
+        "name": "password",
+        "width": 383
+      },
+      {
+        "name": "Simpan akun",
+        "width": 156
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 383
+      },
+      {
+        "name": "password",
+        "width": 383
+      },
+      {
+        "name": "Simpan akun",
+        "width": 156
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 383
+      },
+      {
+        "name": "password",
+        "width": 383
+      },
+      {
+        "name": "Simpan akun",
+        "width": 156
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 404
+      },
+      {
+        "name": "role",
+        "width": 404
+      },
+      {
+        "name": "Tambah akses",
+        "width": 157
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 383
+      },
+      {
+        "name": "password",
+        "width": 383
+      },
+      {
+        "name": "Simpan akun",
+        "width": 156
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 404
+      },
+      {
+        "name": "role",
+        "width": 404
+      },
+      {
+        "name": "Tambah akses",
+        "width": 157
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 383
+      },
+      {
+        "name": "password",
+        "width": 383
+      },
+      {
+        "name": "Simpan akun",
+        "width": 156
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 404
+      },
+      {
+        "name": "role",
+        "width": 404
+      },
+      {
+        "name": "Tambah akses",
+        "width": 157
+      },
+      {
+        "name": "Hapus akun",
+        "width": 130
+      },
+      {
+        "name": "full_name",
+        "width": 383
+      },
+      {
+        "name": "password",
+        "width": 383
+      },
+      {
+        "name": "Simpan akun",
+        "width": 156
+      },
+      {
+        "name": "role",
+        "width": 175
+      },
+      {
+        "name": "Simpan",
+        "width": 87
+      },
+      {
+        "name": "Cabut",
+        "width": 78
+      },
+      {
+        "name": "property_id",
+        "width": 404
+      },
+      {
+        "name": "role",
+        "width": 404
+      },
+      {
+        "name": "Tambah akses",
+        "width": 157
+      }
+    ],
+    "tables": []
+  },
+  {
+    "page": "booking",
+    "device": "desktop",
+    "modal": {
+      "left": 80,
+      "right": 1360,
+      "width": 1280
+    },
+    "viewport": 1440,
+    "documentWidth": 1440,
+    "location": "/reservations",
+    "forms": [
+      {
+        "name": "q",
+        "width": 328
+      },
+      {
+        "name": "status",
+        "width": 156
+      },
+      {
+        "name": "source",
+        "width": 156
+      },
+      {
+        "name": "check_in_from",
+        "width": 242
+      },
+      {
+        "name": "check_in_to",
+        "width": 242
+      },
+      {
+        "name": "Tampilkan",
+        "width": 167
+      },
+      {
+        "name": "WA",
+        "width": 40
+      },
+      {
+        "name": "Extend",
+        "width": 63
+      },
+      {
+        "name": "Detail",
+        "width": 55
+      },
+      {
+        "name": "WA",
+        "width": 40
+      },
+      {
+        "name": "Extend",
+        "width": 63
+      },
+      {
+        "name": "Detail",
+        "width": 55
+      }
+    ],
+    "tables": [
+      {
+        "width": 1064,
+        "content": 1408
+      }
+    ]
+  },
+  {
+    "page": "holding",
+    "device": "desktop",
+    "modal": null,
+    "viewport": 1440,
+    "documentWidth": 1440,
+    "location": "/finance/company",
+    "forms": [
+      {
+        "name": "month",
+        "width": 170
+      },
+      {
+        "name": "Terapkan",
+        "width": 97
+      },
+      {
+        "name": "Refresh",
+        "width": 72
+      }
+    ],
+    "tables": [
+      {
+        "width": 1064,
+        "content": 1064
+      }
+    ]
+  }
+]

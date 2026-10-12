@@ -14,6 +14,8 @@
 
         function openSidebar() {
             sidebar.classList.add('is-open');
+            toggleBtn?.setAttribute('aria-expanded', 'true');
+            closeBtn?.focus();
             if (overlay) {
                 overlay.style.display = 'block';
                 // Trigger reflow for transition
@@ -25,6 +27,8 @@
 
         function closeSidebar() {
             sidebar.classList.remove('is-open');
+            toggleBtn?.setAttribute('aria-expanded', 'false');
+            if (sidebar.contains(document.activeElement)) toggleBtn?.focus();
             if (overlay) {
                 overlay.classList.remove('is-visible');
                 setTimeout(function () {
@@ -37,7 +41,7 @@
         }
 
         function isMobileTablet() {
-            return window.innerWidth < 992;
+            return window.innerWidth < 1200;
         }
 
         if (toggleBtn) {
@@ -61,16 +65,29 @@
         // Auto-close sidebar when a nav link is clicked on mobile/tablet
         sidebar.addEventListener('click', function (event) {
             if (!isMobileTablet()) return;
-            const link = event.target.closest('a.sidebar-nav-link');
+            const link = event.target.closest('a[href]');
             if (link) {
                 closeSidebar();
             }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (!isMobileTablet() || !sidebar.classList.contains('is-open')) return;
+            if (event.key === 'Escape') { closeSidebar(); return; }
+            if (event.key !== 'Tab') return;
+            const focusable = [...sidebar.querySelectorAll('a[href], button:not([disabled]), summary, select, input')]
+                .filter((element) => element.getClientRects().length > 0);
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
         });
 
         // On resize to desktop, reset sidebar state
         window.addEventListener('resize', function () {
             if (!isMobileTablet()) {
                 sidebar.classList.remove('is-open');
+                toggleBtn?.setAttribute('aria-expanded', 'false');
                 if (overlay) {
                     overlay.classList.remove('is-visible');
                     overlay.style.display = 'none';
@@ -115,18 +132,39 @@ function syncCsrfToken(token = getCurrentCsrfToken()) {
 
 document.body.addEventListener('htmx:configRequest', (event) => {
     const token = getCurrentCsrfToken();
-    if (!token) return;
+    if (token) {
+        const tokenName = document.querySelector('meta[name="csrf-token-name"]')?.content || 'csrf_test_name';
+        syncCsrfToken(token);
+        event.detail.headers['X-CSRF-TOKEN'] = token;
+        if (event.detail.parameters) event.detail.parameters[tokenName] = token;
+    }
 
-    const tokenName = document.querySelector('meta[name="csrf-token-name"]')?.content || 'csrf_test_name';
-    syncCsrfToken(token);
-    event.detail.headers['X-CSRF-TOKEN'] = token;
-    if (event.detail.parameters) event.detail.parameters[tokenName] = token;
+    const elt = event.detail.elt;
+    const form = elt instanceof HTMLFormElement ? elt : elt?.closest?.('form');
+    if (form && event.detail.parameters) {
+        form.querySelectorAll('[data-currency-input]').forEach((input) => {
+            if (input.name && input.name in event.detail.parameters) {
+                event.detail.parameters[input.name] = String(parseCurrencyInput(input.value));
+            }
+        });
+    }
 });
 
 document.body.addEventListener('htmx:afterRequest', (event) => {
     const token = event.detail.xhr.getResponseHeader('X-CSRF-TOKEN');
     if (token) syncCsrfToken(token);
     else syncCsrfToken();
+});
+
+document.body.addEventListener('reservationCreated', (event) => {
+    const guesthouse = Number(event.detail?.guesthouse || 0);
+    const month = event.detail?.month || '';
+    if (guesthouse && (!Number.isInteger(guesthouse) || guesthouse < 1 || guesthouse > 5)) return;
+
+    const roomMapUrl = new URL('room-map', window.location.origin);
+    if (guesthouse) roomMapUrl.searchParams.set('guesthouse', String(guesthouse));
+    if (/^\d{4}-\d{2}$/.test(month)) roomMapUrl.searchParams.set('month', month);
+    window.location.assign(roomMapUrl.toString());
 });
 
 document.body.addEventListener('opsChanged', () => {
@@ -210,6 +248,7 @@ async function openReservationDetail(url, button) {
         // elemen baru agar hx-post (Check In, Cancel, dan lainnya) tidak jatuh
         // kembali menjadi submit form GET bawaan browser.
         window.htmx?.process(container);
+        formatCurrencyInputs(container);
         const modalElement = container.querySelector('#dynamicModal');
         bootstrap.Modal.getOrCreateInstance(modalElement).show();
     } catch (error) {
@@ -244,11 +283,48 @@ function parseCurrencyInput(value) {
 
 function formatCurrencyInput(input) {
     if (!(input instanceof HTMLInputElement)) return;
-    const digits = input.value.replace(/[^0-9]/g, '');
-    input.value = digits === '' ? '' : Number(digits).toLocaleString('id-ID');
+    const rawVal = input.value;
+    if (rawVal === '') return;
+    const digits = rawVal.replace(/[^0-9]/g, '');
+    if (digits === '') {
+        input.value = '';
+        return;
+    }
+    const formatted = Number(digits).toLocaleString('id-ID');
+    if (rawVal === formatted) return;
+
+    // Track cursor position by count of digits before cursor
+    const cursorPos = input.selectionStart ?? rawVal.length;
+    const digitsBefore = rawVal.slice(0, cursorPos).replace(/[^0-9]/g, '').length;
+
+    input.value = formatted;
+
+    let newPos = formatted.length;
+    let counted = 0;
+    for (let i = 0; i < formatted.length; i++) {
+        if (counted >= digitsBefore) {
+            newPos = i;
+            break;
+        }
+        if (/[0-9]/.test(formatted[i])) {
+            counted++;
+            if (counted === digitsBefore) {
+                newPos = i + 1;
+                break;
+            }
+        }
+    }
+    try {
+        input.setSelectionRange(newPos, newPos);
+    } catch (_) {}
 }
 
 function formatCurrencyInputs(root = document) {
+    if (!root) return;
+    if (root instanceof HTMLInputElement && root.matches('[data-currency-input]')) {
+        formatCurrencyInput(root);
+        return;
+    }
     root.querySelectorAll?.('[data-currency-input]').forEach(formatCurrencyInput);
 }
 
@@ -259,26 +335,97 @@ function normalizeCurrencyInputs(form) {
 }
 
 document.addEventListener('DOMContentLoaded', () => formatCurrencyInputs(document));
-document.addEventListener('submit', (event) => normalizeCurrencyInputs(event.target), true);
+document.addEventListener('submit', (event) => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement)) return;
+    normalizeCurrencyInputs(form);
+    setTimeout(() => {
+        form.querySelectorAll('[data-currency-input]').forEach(formatCurrencyInput);
+    }, 100);
+}, true);
 document.body.addEventListener('htmx:afterSettle', (event) => formatCurrencyInputs(event.detail?.target || document));
+document.body.addEventListener('htmx:afterSwap', (event) => formatCurrencyInputs(event.detail?.target || document));
+document.body.addEventListener('show.bs.modal', (event) => formatCurrencyInputs(event.target));
+document.body.addEventListener('shown.bs.modal', (event) => formatCurrencyInputs(event.target));
+
+// Observe dynamically added content
+if (typeof MutationObserver !== 'undefined') {
+    const currencyObserver = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+            for (const node of mutation.addedNodes) {
+                if (node instanceof HTMLElement) {
+                    if (node.matches?.('[data-currency-input]')) {
+                        formatCurrencyInput(node);
+                    }
+                    formatCurrencyInputs(node);
+                }
+            }
+        }
+    });
+    currencyObserver.observe(document.body, { childList: true, subtree: true });
+}
+
+// Handle Backspace directly after thousand dot
+document.body.addEventListener('keydown', (event) => {
+    if (event.key === 'Backspace' && event.target.matches?.('[data-currency-input]')) {
+        const input = event.target;
+        const pos = input.selectionStart;
+        if (pos !== null && pos === input.selectionEnd && pos > 1 && input.value[pos - 1] === '.') {
+            event.preventDefault();
+            const before = input.value.slice(0, pos - 2);
+            const after = input.value.slice(pos);
+            input.value = before + after;
+            formatCurrencyInput(input);
+            const newDigitsBefore = before.replace(/[^0-9]/g, '').length;
+            let newPos = 0;
+            let counted = 0;
+            for (let i = 0; i < input.value.length; i++) {
+                if (counted >= newDigitsBefore) {
+                    newPos = i;
+                    break;
+                }
+                if (/[0-9]/.test(input.value[i])) {
+                    counted++;
+                    if (counted === newDigitsBefore) {
+                        newPos = i + 1;
+                        break;
+                    }
+                }
+            }
+            try { input.setSelectionRange(newPos, newPos); } catch (_) {}
+        }
+    }
+});
 
 document.body.addEventListener('focusin', (event) => {
     const input = event.target;
-    if (!(input instanceof HTMLInputElement) || input.type !== 'number' || input.value !== '0') return;
-
-    input.value = '';
-    input.dataset.zeroCleared = '1';
+    if (!(input instanceof HTMLInputElement)) return;
+    if (input.matches('[data-currency-input]') && (input.value === '0' || input.value === 'Rp0')) {
+        input.value = '';
+        input.dataset.zeroCleared = '1';
+    } else if (input.type === 'number' && input.value === '0') {
+        input.value = '';
+        input.dataset.zeroCleared = '1';
+    }
 });
 
 document.body.addEventListener('focusout', (event) => {
     const input = event.target;
-    if (!(input instanceof HTMLInputElement) || input.type !== 'number' || input.dataset.zeroCleared !== '1') return;
-
-    if (input.value === '') {
-        input.value = '0';
-        input.dispatchEvent(new Event('input', { bubbles: true }));
+    if (!(input instanceof HTMLInputElement)) return;
+    if (input.matches('[data-currency-input]')) {
+        if (input.value === '' && input.dataset.zeroCleared === '1') {
+            input.value = '0';
+            delete input.dataset.zeroCleared;
+        } else {
+            formatCurrencyInput(input);
+        }
+    } else if (input.type === 'number' && input.dataset.zeroCleared === '1') {
+        if (input.value === '') {
+            input.value = '0';
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        delete input.dataset.zeroCleared;
     }
-    delete input.dataset.zeroCleared;
 });
 
 document.body.addEventListener('focusout', (event) => {
@@ -288,6 +435,22 @@ document.body.addEventListener('focusout', (event) => {
 });
 
 document.body.addEventListener('click', (event) => {
+    const stepBtn = event.target.closest('[data-extra-bed-step]');
+    if (stepBtn) {
+        const option = stepBtn.closest('.booking-extra-bed-option');
+        const input = option?.querySelector('[data-extra-bed-quantity]');
+        const bookingForm = stepBtn.closest('[data-booking-form]');
+        if (input && !input.disabled && bookingForm) {
+            const step = parseInt(stepBtn.dataset.extraBedStep, 10) || 0;
+            const current = Math.max(0, parseInt(input.value, 10) || 0);
+            input.value = String(Math.max(0, current + step));
+            clampExtraBedQuantity(input, bookingForm);
+            syncExtraBedPicker(bookingForm);
+            syncBookingPayment(bookingForm);
+        }
+        return;
+    }
+
     const resetConfirmedTotal = event.target.closest('[data-reset-confirmed-total]');
     if (resetConfirmedTotal) {
         const bookingForm = resetConfirmedTotal.closest('[data-booking-form]');
@@ -350,7 +513,30 @@ document.body.addEventListener('change', (event) => {
     if (bookingForm && event.target.matches('[data-agent-guest-toggle]')) {
         syncAgentGuest(bookingForm);
     }
+    const extendForm = event.target.closest('[data-extend-booking-form]');
+    if (extendForm) {
+        if (event.target.matches('[data-extend-duration-select]')) {
+            syncExtendFormDuration(extendForm);
+        }
+        if (event.target.matches('[data-extend-payment-type]')) {
+            syncExtendFormPayment(extendForm);
+        }
+    }
+
+    const monthlyContainer = event.target.closest('[data-booking-form], [data-monthly-edit-form]');
+    if (monthlyContainer && event.target.matches('[data-monthly-duration-select], [data-monthly-checkin]')) {
+        syncMonthlyDuration(monthlyContainer);
+        const bForm = monthlyContainer.closest('[data-booking-form]') || (monthlyContainer.matches('[data-booking-form]') ? monthlyContainer : null);
+        if (bForm) {
+            syncBookingPayment(bForm);
+            syncBookingRoomMapLink(bForm);
+            refreshBookingRoomAvailability(bForm);
+        }
+    }
     if (bookingForm && event.target.matches('[name="check_in_date"], [name="check_out_date"]')) {
+        if (bookingForm.dataset.pricingMode === 'room_monthly' && event.target.matches('[name="check_in_date"]')) {
+            syncMonthlyDuration(bookingForm);
+        }
         syncBookingPayment(bookingForm);
         syncBookingRoomMapLink(bookingForm);
         refreshBookingRoomAvailability(bookingForm);
@@ -366,8 +552,18 @@ document.body.addEventListener('change', (event) => {
     }
 
     const roomPicker = event.target.closest('[data-booking-room-picker]');
-    if (roomPicker && event.target.matches('input[name="room_ids[]"]')) {
+    if (roomPicker && (event.target.matches('input[name="room_ids[]"]') || event.target.matches('[data-whole-home-master]'))) {
         const form = event.target.closest('[data-booking-form]');
+        if (form?.dataset.pricingMode === 'whole_home_nightly') {
+            const master = roomPicker.querySelector('[data-whole-home-master]');
+            const isChecked = master ? master.checked : event.target.checked;
+            if (master && event.target === master) {
+                master.dataset.userDeselected = master.checked ? '' : '1';
+            }
+            roomPicker.querySelectorAll('input[name="room_ids[]"]').forEach((input) => {
+                input.checked = isChecked;
+            });
+        }
         updateBookingRoomCount(roomPicker);
         syncExtraBedPicker(form);
         syncBookingPayment(form);
@@ -414,8 +610,28 @@ function syncExpenseGuesthouseScope(form) {
 
 document.body.addEventListener('input', (event) => {
     if (event.target.matches?.('[data-currency-input]')) formatCurrencyInput(event.target);
+
+    const extendFormInput = event.target.closest('[data-extend-booking-form]');
+    if (extendFormInput) {
+        if (event.target.matches('[data-extend-custom-input]')) {
+            syncExtendFormDuration(extendFormInput);
+            return;
+        }
+        if (event.target.matches('[data-extend-total]')) {
+            syncExtendFormPayment(extendFormInput);
+            return;
+        }
+        if (event.target.matches('[data-extend-payment-amount]')) {
+            return;
+        }
+    }
+
     const bookingForm = event.target.closest('[data-booking-form]');
     if (!bookingForm) return;
+    if (event.target.matches('[data-payment-amount]')) {
+        event.target.dataset.manualDp = '1';
+        return;
+    }
     if (event.target.matches('[data-guest-suggestion-input]')) {
         bookingForm.querySelector('[data-selected-guest-id]').value = '';
         loadBookingGuestSuggestions(bookingForm, event.target.value);
@@ -429,10 +645,47 @@ document.body.addEventListener('input', (event) => {
     if (event.target.matches('[data-extra-bed-quantity]')) {
         clampExtraBedQuantity(event.target, bookingForm);
         syncExtraBedPicker(bookingForm);
+        syncBookingPayment(bookingForm);
+        return;
+    }
+    if (event.target.matches('[name="extra_bed_cost"]')) {
+        const rate = parseCurrencyInput(event.target.value);
+        if (rate > 0 && totalExtraBedQuantity(bookingForm) === 0) {
+            const firstInput = bookingForm.querySelector('[data-extra-bed-quantity]:not(:disabled)');
+            if (firstInput) {
+                firstInput.value = '1';
+                clampExtraBedQuantity(firstInput, bookingForm);
+                syncExtraBedPicker(bookingForm);
+            }
+        }
+    }
+    const monthlyContainer = event.target.closest('[data-booking-form], [data-monthly-edit-form]');
+    if (monthlyContainer && event.target.matches('[data-monthly-custom-input]')) {
+        syncMonthlyDuration(monthlyContainer);
+        const bForm = monthlyContainer.closest('[data-booking-form]') || (monthlyContainer.matches('[data-booking-form]') ? monthlyContainer : null);
+        if (bForm) {
+            syncBookingPayment(bForm);
+            syncBookingRoomMapLink(bForm);
+            refreshBookingRoomAvailability(bForm);
+        }
         return;
     }
     if (!event.target.matches('[name="check_in_date"], [name="check_out_date"], [name$="_cost"]')) return;
     syncBookingPayment(bookingForm);
+});
+
+document.body.addEventListener('focusout', (event) => {
+    if (event.target.matches?.('[data-extra-bed-quantity]')) {
+        const bookingForm = event.target.closest('[data-booking-form]');
+        if (event.target.value.trim() === '') {
+            event.target.value = '0';
+        }
+        if (bookingForm) {
+            clampExtraBedQuantity(event.target, bookingForm);
+            syncExtraBedPicker(bookingForm);
+            syncBookingPayment(bookingForm);
+        }
+    }
 });
 
 const bookingGuestSuggestions = new WeakMap();
@@ -504,6 +757,128 @@ function localDateValue() {
     return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
+function calculateMonthlyCheckOut(checkIn, count) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(checkIn) || count <= 0) return '';
+    const [year, month, day] = checkIn.split('-').map(Number);
+    const target = new Date(year, month - 1 + count, 1);
+    const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+    target.setDate(Math.min(day, lastDay));
+    return `${target.getFullYear()}-${String(target.getMonth() + 1).padStart(2, '0')}-${String(target.getDate()).padStart(2, '0')}`;
+}
+
+function syncMonthlyDuration(container) {
+    if (!container) return;
+    const checkInInput = container.querySelector('[data-monthly-checkin]') || container.querySelector('[name="check_in_date"]');
+    const checkOutInput = container.querySelector('[data-monthly-checkout]') || container.querySelector('[name="check_out_date"]');
+    const durationSelect = container.querySelector('[data-monthly-duration-select]');
+    const customWrap = container.querySelector('[data-monthly-custom-wrap]');
+    const customInput = container.querySelector('[data-monthly-custom-input]');
+
+    if (!checkInInput || !checkOutInput || !durationSelect) return;
+
+    let months = 1;
+    if (durationSelect.value === 'custom') {
+        if (customWrap) customWrap.classList.remove('d-none');
+        months = parseInt(customInput?.value, 10) || 1;
+    } else {
+        if (customWrap) customWrap.classList.add('d-none');
+        months = parseInt(durationSelect.value, 10) || 1;
+    }
+
+    if (months < 1) months = 1;
+
+    const checkIn = checkInInput.value;
+    if (checkIn) {
+        const calculatedCheckOut = calculateMonthlyCheckOut(checkIn, months);
+        if (calculatedCheckOut) {
+            checkOutInput.value = calculatedCheckOut;
+        }
+    }
+}
+
+function syncExtendFormDuration(form) {
+    if (!form) return;
+    const durationSelect = form.querySelector('[data-extend-duration-select]');
+    const customWrap = form.querySelector('[data-extend-custom-wrap]');
+    const customInput = form.querySelector('[data-extend-custom-input]');
+    const monthsHidden = form.querySelector('[data-extend-months-hidden]');
+    const checkInInput = form.querySelector('[data-extend-checkin]');
+    const checkOutInput = form.querySelector('[data-extend-checkout]');
+    const totalInput = form.querySelector('[data-extend-total]');
+    const monthlyRate = parseFloat(form.dataset.monthlyRate || '0');
+
+    let months = 1;
+    if (durationSelect?.value === 'custom') {
+        customWrap?.classList.remove('d-none');
+        months = parseInt(customInput?.value, 10) || 1;
+    } else {
+        customWrap?.classList.add('d-none');
+        months = parseInt(durationSelect?.value, 10) || 1;
+    }
+    if (months < 1) months = 1;
+
+    if (monthsHidden) monthsHidden.value = String(months);
+
+    if (checkInInput?.value && checkOutInput) {
+        const newCheckOut = calculateMonthlyCheckOut(checkInInput.value, months);
+        if (newCheckOut) checkOutInput.value = newCheckOut;
+    }
+
+    const newTotal = months * monthlyRate;
+    if (totalInput) {
+        totalInput.value = newTotal.toLocaleString('id-ID');
+    }
+
+    syncExtendFormPayment(form);
+}
+
+function syncExtendFormPayment(form) {
+    if (!form) return;
+    const typeSelect = form.querySelector('[data-extend-payment-type]');
+    const paymentAmount = form.querySelector('[data-extend-payment-amount]');
+    const paymentMethod = form.querySelector('[data-extend-payment-method]');
+    const paymentDate = form.querySelector('[data-extend-payment-date]');
+    const totalInput = form.querySelector('[data-extend-total]');
+    const total = parseCurrencyInput(totalInput?.value || '0');
+
+    const type = typeSelect?.value || 'full';
+    const hasPayment = type !== 'unpaid';
+
+    if (paymentAmount) {
+        paymentAmount.disabled = !hasPayment;
+        paymentAmount.readOnly = type === 'full';
+        if (type === 'unpaid') {
+            paymentAmount.value = '0';
+        } else if (type === 'full') {
+            paymentAmount.value = total > 0 ? total.toLocaleString('id-ID') : '0';
+        } else if (type === 'dp') {
+            paymentAmount.value = total > 0 ? Math.round(total * 0.5).toLocaleString('id-ID') : '0';
+        }
+    }
+
+    if (paymentMethod) paymentMethod.disabled = !hasPayment;
+    if (paymentDate) {
+        paymentDate.disabled = !hasPayment;
+        paymentDate.required = hasPayment;
+        if (!hasPayment) paymentDate.value = '';
+        else if (!paymentDate.value) paymentDate.value = localDateValue();
+    }
+}
+
+function bookingWholeMonths(checkIn, checkOut) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(checkIn) || !/^\d{4}-\d{2}-\d{2}$/.test(checkOut)) return 0;
+    const [year, month, day] = checkIn.split('-').map(Number);
+    for (let count = 1; count <= 240; count++) {
+        const target = new Date(year, month - 1 + count, 1);
+        const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+        target.setDate(Math.min(day, lastDay));
+        const anniversary = `${target.getFullYear()}-${String(target.getMonth() + 1).padStart(2, '0')}-${String(target.getDate()).padStart(2, '0')}`;
+        if (anniversary === checkOut) return count;
+        if (anniversary > checkOut) return 0;
+    }
+    return 0;
+}
+
 function getBookingStandardTotal(form) {
     if (!form) return 0;
     const checkIn = form.querySelector('[name="check_in_date"]')?.value || '';
@@ -511,12 +886,24 @@ function getBookingStandardTotal(form) {
     const start = checkIn ? new Date(`${checkIn}T00:00:00`) : null;
     const end = checkOut ? new Date(`${checkOut}T00:00:00`) : null;
     const nights = start && end && end >= start ? Math.max(1, Math.round((end - start) / 86400000)) : 0;
-    const roomTotal = Array.from(form.querySelectorAll('[name="room_ids[]"]:checked')).reduce((sum, input) => {
+    const selectedRooms = Array.from(form.querySelectorAll('[name="room_ids[]"]:checked'));
+    const mode = form.dataset.pricingMode || 'room_nightly';
+    const roomTotal = mode === 'whole_home_nightly'
+        ? (selectedRooms.length === form.querySelectorAll('[name="room_ids[]"]').length ? Number(form.dataset.baseRate || 0) * nights : 0)
+        : (mode === 'room_monthly' ? selectedRooms.reduce((sum, input) => {
+            const p = Number(input.closest('[data-booking-room-option]')?.dataset.pricePerNight || 0);
+            const rate = p > 0 ? p : Number(form.dataset.baseRate || 0);
+            return sum + (rate * bookingWholeMonths(checkIn, checkOut));
+        }, 0) : selectedRooms.reduce((sum, input) => {
         const price = Number(input.closest('[data-booking-room-option]')?.dataset.pricePerNight || 0);
         return sum + (price * nights);
-    }, 0);
-    const services = Array.from(form.querySelectorAll('[name$="_cost"]')).reduce((sum, input) => sum + Math.max(0, parseCurrencyInput(input.value)), 0);
-    return roomTotal + services;
+    }, 0));
+    const extraBedRate = Math.max(0, parseCurrencyInput(form.querySelector('[name="extra_bed_cost"]')?.value || '0'));
+    const extraBedQty = totalExtraBedQuantity(form);
+    const extraBedNights = nights > 0 ? nights : 1;
+    const extraBedTotal = extraBedQty > 0 ? (extraBedRate * extraBedQty * extraBedNights) : 0;
+    const otherServices = Array.from(form.querySelectorAll('[name$="_cost"]:not([name="extra_bed_cost"])')).reduce((sum, input) => sum + Math.max(0, parseCurrencyInput(input.value)), 0);
+    return roomTotal + otherServices + extraBedTotal;
 }
 
 function getBookingConfirmedTotal(form) {
@@ -575,7 +962,11 @@ function syncBookingPayment(form) {
     const checkIn = form.querySelector('[name="check_in_date"]')?.value || '';
     const checkOut = form.querySelector('[name="check_out_date"]')?.value || '';
     const stayType = form.querySelector('[data-stay-type]');
-    if (stayType) stayType.textContent = checkIn && checkOut && checkIn === checkOut
+    if (stayType && form.dataset.pricingMode === 'room_monthly') stayType.textContent = bookingWholeMonths(checkIn, checkOut)
+        ? `Kos Mitra: ${bookingWholeMonths(checkIn, checkOut)} bulan sejak tanggal masuk · ${formatRupiah(Number(form.dataset.baseRate || 0))} per kamar/bulan.`
+        : 'Kos Mitra: tanggal keluar harus tepat pada kelipatan bulan sejak tanggal masuk (tanpa prorata).';
+    else if (stayType && form.dataset.pricingMode === 'whole_home_nightly') stayType.textContent = 'Homestay Mitra: satu rumah Rp600.000/malam (seluruh 3 kamar).';
+    else if (stayType) stayType.textContent = checkIn && checkOut && checkIn === checkOut
         ? 'Transit: kamar terpakai pada tanggal ini dan dihitung setara 1 malam.'
         : 'Check-in dan check-out di tanggal yang sama akan dicatat sebagai transit.';
     const confirmedTotal = getBookingConfirmedTotal(form);
@@ -599,11 +990,21 @@ function syncBookingPayment(form) {
     const isTransfer = hasPayment && method?.value === 'Transfer';
 
     if (amount) {
+        const previousType = amount.dataset.paymentType || 'unpaid';
         amount.disabled = !hasPayment;
-        amount.readOnly = type === 'full' || type === 'dp';
-        if (type === 'unpaid') amount.value = '0';
-        if (type === 'dp') amount.value = String(Math.round(confirmedTotal * 0.5));
-        if (type === 'full') amount.value = String(Math.round(confirmedTotal));
+        amount.readOnly = type === 'full';
+        if (type === 'unpaid') {
+            amount.value = '0';
+            delete amount.dataset.manualDp;
+        }
+        if (type === 'dp' && (previousType !== 'dp' || amount.dataset.manualDp !== '1')) {
+            amount.value = String(Math.round(confirmedTotal * 0.5));
+        }
+        if (type === 'full') {
+            amount.value = String(Math.round(confirmedTotal));
+            delete amount.dataset.manualDp;
+        }
+        amount.dataset.paymentType = type;
         formatCurrencyInput(amount);
     }
     if (method) method.disabled = !hasPayment || isOtaSource;
@@ -615,7 +1016,7 @@ function syncBookingPayment(form) {
     }
     if (typeHelp) typeHelp.textContent = type === 'full'
         ? `Nominal otomatis mengikuti total booking: ${formatRupiah(confirmedTotal)}.`
-        : (type === 'dp' ? `Nominal DP otomatis 50% dari total booking: ${formatRupiah(confirmedTotal * 0.5)}.` : 'Belum ada pembayaran yang dicatat.');
+        : (type === 'dp' ? `Nilai awal DP 50% dari total booking: ${formatRupiah(confirmedTotal * 0.5)}. Nominal dapat disesuaikan.` : 'Belum ada pembayaran yang dicatat.');
     if (paymentDateHelp) paymentDateHelp.textContent = hasPayment && isOta
         ? 'Tanggal pencairan OTA diisi nanti dari detail reservasi setelah dana diterima.'
         : (hasPayment ? 'Tanggal saat pembayaran diterima.' : 'Pilih DP atau Lunas untuk mencatat pembayaran.');
@@ -637,8 +1038,14 @@ function syncPaymentProofField(form, visible) {
 }
 
 function updateBookingRoomCount(roomPicker) {
-    const count = roomPicker.querySelectorAll('input[name="room_ids[]"]:checked').length;
+    const form = roomPicker.closest('[data-booking-form]');
     const countLabel = roomPicker.querySelector('[data-booking-room-count]');
+    if (form?.dataset.pricingMode === 'whole_home_nightly') {
+        const master = roomPicker.querySelector('[data-whole-home-master]');
+        if (countLabel) countLabel.textContent = master?.checked ? '1 unit (seluruh rumah) dipilih' : '0 unit dipilih';
+        return;
+    }
+    const count = roomPicker.querySelectorAll('input[name="room_ids[]"]:checked').length;
     if (countLabel) countLabel.textContent = `${count} kamar dipilih`;
 }
 
@@ -667,13 +1074,20 @@ function syncExtraBedPicker(form) {
     if (!picker || !roomPicker) return;
 
     const selectedRooms = new Set(Array.from(roomPicker.querySelectorAll('input[name="room_ids[]"]:checked')).map((input) => input.value));
+    const availableTotal = Math.max(0, Number(picker.dataset.extraBedAvailable || 0));
+
     picker.querySelectorAll('[data-extra-bed-option]').forEach((option) => {
         const visible = selectedRooms.has(option.dataset.roomId || '');
         const input = option.querySelector('[data-extra-bed-quantity]');
+        const stepButtons = option.querySelectorAll('[data-extra-bed-step]');
         option.classList.toggle('d-none', !visible);
         if (input) {
-            input.disabled = !visible;
+            const shouldDisable = !visible || availableTotal <= 0;
+            input.disabled = shouldDisable;
             if (!visible) input.value = '0';
+            stepButtons.forEach((btn) => {
+                btn.disabled = shouldDisable;
+            });
         }
     });
     picker.classList.toggle('d-none', selectedRooms.size === 0);
@@ -691,8 +1105,14 @@ function clampExtraBedQuantity(input, form) {
         .filter((other) => other !== input && !other.disabled)
         .reduce((sum, other) => sum + Math.max(0, Number(other.value) || 0), 0);
     const allowedForThisRoom = Math.max(0, available - usedByOtherRooms);
-    const current = Math.max(0, Number(input.value) || 0);
-    input.value = String(Math.min(current, allowedForThisRoom));
+
+    if (input.value === '') return;
+
+    let current = Math.max(0, Number(input.value) || 0);
+    if (current > allowedForThisRoom) {
+        current = allowedForThisRoom;
+    }
+    input.value = String(current);
 }
 
 function syncExtraBedAvailability(form, availability = {}) {
@@ -708,9 +1128,15 @@ function syncExtraBedAvailability(form, availability = {}) {
     });
 
     const label = picker.querySelector('[data-extra-bed-availability]');
-    if (label) label.textContent = total > 0
-        ? `Stok tersedia: ${available} unit dari ${total} total.`
-        : 'Stok tersedia mengikuti tanggal menginap.';
+    if (label) {
+        if (total === 0) {
+            label.textContent = 'Stok Extra Bed belum diatur / tidak tersedia (0 unit).';
+        } else if (available === 0) {
+            label.textContent = `Stok Extra Bed habis untuk tanggal yang dipilih (0 dari ${total} unit).`;
+        } else {
+            label.textContent = `Stok tersedia: ${available} unit dari ${total} total.`;
+        }
+    }
 
     syncExtraBedPicker(form);
 }
@@ -724,23 +1150,29 @@ async function refreshBookingRoomAvailability(form) {
 
     if (!checkIn || !checkOut || checkOut < checkIn) {
         picker.querySelectorAll('[data-booking-room-option]').forEach((option) => {
-            const input = option.querySelector('input[name="room_ids[]"]');
-            const reason = option.querySelector('[data-booking-room-reason]');
-            if (input) {
+            const master = option.querySelector('[data-whole-home-master]');
+            if (master) {
+                master.checked = false;
+                master.disabled = true;
+            }
+            option.querySelectorAll('input[name="room_ids[]"]').forEach((input) => {
                 input.checked = false;
                 input.disabled = true;
-            }
+            });
             option.classList.add('is-disabled');
+            const reason = option.querySelector('[data-booking-room-reason]');
             if (reason) reason.textContent = ' · Pilih tanggal yang valid terlebih dahulu';
         });
-        if (status) status.textContent = 'Check-out tidak boleh sebelum check-in.';
+        if (status) status.textContent = form.dataset.pricingMode === 'room_monthly'
+            ? 'Tanggal keluar tidak boleh sebelum tanggal masuk.'
+            : (form.dataset.pricingMode === 'whole_home_nightly' ? 'Pilih tanggal menginap terlebih dahulu.' : 'Check-out tidak boleh sebelum check-in.');
         updateBookingRoomCount(picker);
         syncExtraBedAvailability(form, { total_stock: 0, rented: 0, available: 0 });
         syncBookingPayment(form);
         return;
     }
 
-    if (status) status.textContent = 'Memeriksa ketersediaan kamar...';
+    if (status) status.textContent = form.dataset.pricingMode === 'whole_home_nightly' ? 'Memeriksa ketersediaan unit...' : 'Memeriksa ketersediaan kamar...';
     try {
         const url = new URL(form.dataset.availabilityUrl, window.location.origin);
         url.searchParams.set('check_in_date', checkIn);
@@ -748,26 +1180,57 @@ async function refreshBookingRoomAvailability(form) {
         const response = await fetch(url, { headers: { Accept: 'application/json' } });
         if (!response.ok) throw new Error('Availability request failed');
         const data = await response.json();
+        if (data.valid === false) throw new Error(data.message || 'Tanggal tidak valid.');
         const rooms = new Map((data.rooms || []).map((room) => [String(room.id), room]));
 
-        picker.querySelectorAll('[data-booking-room-option]').forEach((option) => {
-            const input = option.querySelector('input[name="room_ids[]"]');
-            const reason = option.querySelector('[data-booking-room-reason]');
-            const room = rooms.get(input?.value || '');
-            const available = room?.available === true;
-            if (input) {
-                if (!available) input.checked = false;
-                input.disabled = !available;
+        if (form.dataset.pricingMode === 'whole_home_nightly') {
+            const wholeHomeOption = picker.querySelector('[data-booking-room-option][data-whole-home="true"]');
+            const allAvailable = rooms.size > 0 && Array.from(rooms.values()).every((r) => r.available === true);
+            const firstUnavailable = Array.from(rooms.values()).find((r) => r.available === false);
+            if (wholeHomeOption) {
+                const master = wholeHomeOption.querySelector('[data-whole-home-master]');
+                const roomInputs = wholeHomeOption.querySelectorAll('input[name="room_ids[]"]');
+                const reason = wholeHomeOption.querySelector('[data-booking-room-reason]');
+
+                if (master) {
+                    master.disabled = !allAvailable;
+                    if (!allAvailable) {
+                        master.checked = false;
+                    } else if (master.dataset.userDeselected !== '1') {
+                        master.checked = true;
+                    }
+                }
+                roomInputs.forEach((input) => {
+                    input.disabled = !allAvailable;
+                    input.checked = master ? master.checked : allAvailable;
+                });
+                wholeHomeOption.classList.toggle('is-disabled', !allAvailable);
+                if (reason) reason.textContent = allAvailable ? ' · Tersedia' : (firstUnavailable?.reason ? ` · ${firstUnavailable.reason}` : ' · Rumah sudah dibooking pada tanggal ini');
             }
-            option.classList.toggle('is-disabled', !available);
-            if (reason) reason.textContent = room?.reason ? ` · ${room.reason}` : '';
-        });
-        if (status) status.textContent = data.message || 'Ketersediaan kamar diperbarui.';
+            if (status) status.textContent = data.message || (allAvailable ? 'Unit homestay (1 rumah) tersedia untuk tanggal yang dipilih.' : 'Unit homestay tidak tersedia untuk tanggal yang dipilih.');
+        } else {
+            picker.querySelectorAll('[data-booking-room-option]').forEach((option) => {
+                const input = option.querySelector('input[name="room_ids[]"]');
+                const reason = option.querySelector('[data-booking-room-reason]');
+                const room = rooms.get(input?.value || '');
+                const available = room?.available === true;
+                if (input) {
+                    if (!available) input.checked = false;
+                    input.disabled = !available;
+                }
+                option.classList.toggle('is-disabled', !available);
+                if (reason) reason.textContent = room?.reason ? ` · ${room.reason}` : '';
+            });
+            if (status) status.textContent = data.message || 'Ketersediaan kamar diperbarui.';
+        }
         updateBookingRoomCount(picker);
         syncExtraBedAvailability(form, data.extra_beds || {});
         syncBookingPayment(form);
     } catch (error) {
-        if (status) status.textContent = 'Ketersediaan kamar tidak dapat diperiksa. Silakan coba lagi.';
+        picker.querySelectorAll('[data-whole-home-master]').forEach((input) => { input.checked = false; input.disabled = true; });
+        picker.querySelectorAll('input[name="room_ids[]"]').forEach((input) => { input.checked = false; input.disabled = true; });
+        updateBookingRoomCount(picker);
+        if (status) status.textContent = error.message === 'Availability request failed' ? 'Ketersediaan tidak dapat diperiksa. Silakan coba lagi.' : error.message;
         syncExtraBedPicker(form);
         syncBookingPayment(form);
     }
@@ -849,6 +1312,8 @@ function refreshDynamicModalFromHtml(html) {
     }
 
     container.innerHTML = html;
+    window.htmx?.process(container);
+    formatCurrencyInputs(container);
     const modalElement = container.querySelector('#dynamicModal');
     if (!modalElement) return true;
 
@@ -1021,10 +1486,17 @@ document.body.addEventListener('htmx:afterSwap', (event) => {
             bootstrap.Modal.getOrCreateInstance(modalElement).show();
             const bookingForm = modalElement.querySelector('[data-booking-form]');
             if (bookingForm) {
+                if (bookingForm.dataset.pricingMode === 'room_monthly') {
+                    syncMonthlyDuration(bookingForm);
+                }
                 syncBookingPayment(bookingForm);
                 syncAgentGuest(bookingForm);
                 syncBookingRoomMapLink(bookingForm);
                 refreshBookingRoomAvailability(bookingForm);
+            }
+            const monthlyEditForm = modalElement.querySelector('[data-monthly-edit-form]');
+            if (monthlyEditForm) {
+                syncMonthlyDuration(monthlyEditForm);
             }
             modalElement.querySelectorAll('[data-payment-log-form]').forEach((form) => {
                 const method = form.querySelector('[data-payment-log-method]');
@@ -1270,12 +1742,74 @@ function initializeMarketingGuesthouseFilter(root = document) {
     form.dataset.guesthouseFilterReady = '1';
 }
 
+let marketingTenantDurationChart = null;
+function initializeMarketingTenantDurationChart(root = document) {
+    const canvas = root.querySelector?.('#marketingTenantDurationChart') || document.querySelector('#marketingTenantDurationChart');
+    if (!canvas || typeof Chart === 'undefined') return;
+
+    const labels = JSON.parse(canvas.dataset.labels || '[]');
+    const values = JSON.parse(canvas.dataset.values || '[]');
+    const nights = JSON.parse(canvas.dataset.nights || '[]');
+
+    Chart.getChart(canvas)?.destroy();
+    marketingTenantDurationChart?.destroy();
+    marketingTenantDurationChart = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Lama Sewa (bulan)',
+                data: values,
+                backgroundColor: '#2563eb',
+                borderColor: '#1d4ed8',
+                borderWidth: 1,
+                borderRadius: 4,
+                barPercentage: .5,
+                categoryPercentage: .7,
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (context) => {
+                            const val = context.raw;
+                            const d = nights[context.dataIndex] || Math.round(val * 30);
+                            return `Lama sewa: ${Number(val).toLocaleString('id-ID')} bulan (${d} hari)`;
+                        },
+                    },
+                },
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    title: { display: true, text: 'Nama penghuni kos', color: '#64748b' },
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: (value) => `${Number(value).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`,
+                    },
+                    grid: { color: '#e2e8f0' },
+                    title: { display: true, text: 'Lama sewa (bulan)', color: '#64748b' },
+                },
+            },
+        },
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initializeMarketingOriginChart(document);
+    initializeMarketingTenantDurationChart(document);
     initializeMarketingGuesthouseFilter(document);
 });
 document.body.addEventListener('htmx:afterSettle', (event) => {
     initializeMarketingOriginChart(event.detail.target);
+    initializeMarketingTenantDurationChart(event.detail.target);
     initializeMarketingGuesthouseFilter(event.detail.target);
 });
 
@@ -1443,6 +1977,67 @@ function initializeMarketingForecastChart(root = document) {
 document.addEventListener('DOMContentLoaded', () => initializeMarketingForecastChart(document));
 document.body.addEventListener('htmx:afterSettle', (event) => initializeMarketingForecastChart(event.detail.target));
 
+let marketingTurnoverChart = null;
+function initializeMarketingTurnoverChart(root = document) {
+    const canvas = root.querySelector?.('#marketingTurnoverChart') || document.querySelector('#marketingTurnoverChart');
+    if (!canvas || typeof Chart === 'undefined') return;
+
+    const labels = JSON.parse(canvas.dataset.labels || '[]');
+    const dataIn = JSON.parse(canvas.dataset.in || '[]');
+    const dataOut = JSON.parse(canvas.dataset.out || '[]');
+
+    Chart.getChart(canvas)?.destroy();
+    marketingTurnoverChart?.destroy();
+    marketingTurnoverChart = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Masuk (Check-in)',
+                    data: dataIn,
+                    backgroundColor: '#16a34a',
+                    borderColor: '#15803d',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                },
+                {
+                    label: 'Keluar (Check-out)',
+                    data: dataOut,
+                    backgroundColor: '#dc2626',
+                    borderColor: '#b91c1c',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+                legend: { position: 'top', align: 'start' },
+                tooltip: {
+                    callbacks: {
+                        label: (context) => `${context.dataset.label}: ${context.raw} penghuni`,
+                    },
+                },
+            },
+            scales: {
+                x: { grid: { display: false } },
+                y: {
+                    beginAtZero: true,
+                    ticks: { precision: 0 },
+                    grid: { color: '#e2e8f0' },
+                    title: { display: true, text: 'Jumlah penghuni', color: '#64748b' },
+                },
+            },
+        },
+    });
+}
+document.addEventListener('DOMContentLoaded', () => initializeMarketingTurnoverChart(document));
+document.body.addEventListener('htmx:afterSettle', (event) => initializeMarketingTurnoverChart(event.detail.target));
+
 let opsBudgetChart = null;
 function initializeOpsBudgetChart(root = document) {
     const canvas = root.querySelector?.('#opsBudgetChart') || document.querySelector('#opsBudgetChart');
@@ -1576,4 +2171,155 @@ function initializeFinanceCashFlowChart(root = document) {
 document.addEventListener('DOMContentLoaded', () => initializeFinanceCashFlowChart(document));
 document.body.addEventListener('htmx:afterSettle', (event) => {
     if (event.detail.target.id === 'finance-panel') initializeFinanceCashFlowChart(event.detail.target);
+});
+
+// Property switcher URL sync
+(function () {
+    const form = document.getElementById('property-switch-form');
+    if (form) {
+        form.addEventListener('submit', function () {
+            const redirectInput = document.getElementById('property-switch-redirect');
+            if (redirectInput) {
+                redirectInput.value = window.location.pathname + window.location.search;
+            }
+        });
+    }
+})();
+
+// Company Finance 6-Month Trend Chart (CF-4)
+let companyTrendChart = null;
+function initializeCompanyTrendChart(root = document) {
+    const canvas = root.querySelector?.('#companyTrendChart') || document.querySelector('#companyTrendChart');
+    if (!canvas || typeof Chart === 'undefined') return;
+
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) existingChart.destroy();
+    if (companyTrendChart && companyTrendChart !== existingChart) {
+        companyTrendChart.destroy();
+    }
+    companyTrendChart = null;
+
+    try {
+        const labels = JSON.parse(canvas.dataset.labels || '[]');
+        const cashIn = JSON.parse(canvas.dataset.cashIn || '[]');
+        const cashOut = JSON.parse(canvas.dataset.cashOut || '[]');
+        const netCash = JSON.parse(canvas.dataset.netCash || '[]');
+        const companyResult = JSON.parse(canvas.dataset.companyResult || '[]');
+
+        const formatIdr = (val) => 'Rp' + Number(val || 0).toLocaleString('id-ID');
+
+        companyTrendChart = new Chart(canvas.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Kas Masuk',
+                        data: cashIn,
+                        borderColor: '#059669',
+                        backgroundColor: 'rgba(5, 150, 105, 0.05)',
+                        borderWidth: 2,
+                        pointRadius: 3.5,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#059669',
+                        tension: 0.15,
+                    },
+                    {
+                        label: 'Kas Keluar',
+                        data: cashOut,
+                        borderColor: '#dc2626',
+                        backgroundColor: 'rgba(220, 38, 38, 0.04)',
+                        borderWidth: 2,
+                        pointRadius: 3.5,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#dc2626',
+                        tension: 0.15,
+                    },
+                    {
+                        label: 'Arus Kas Bersih',
+                        data: netCash,
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.05)',
+                        borderWidth: 2.5,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#2563eb',
+                        tension: 0.15,
+                    },
+                    {
+                        label: 'Hak Bersih Holding',
+                        data: companyResult,
+                        borderColor: '#0f172a',
+                        borderDash: [5, 4],
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        pointRadius: 3.5,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#0f172a',
+                        tension: 0.15,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        align: 'end',
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 8,
+                            padding: 12,
+                            font: { size: 11 },
+                        },
+                    },
+                    tooltip: {
+                        backgroundColor: '#0f172a',
+                        titleColor: '#ffffff',
+                        bodyColor: '#e2e8f0',
+                        padding: 10,
+                        cornerRadius: 6,
+                        callbacks: {
+                            label: function (ctx) {
+                                return `${ctx.dataset.label}: ${formatIdr(ctx.parsed.y)}`;
+                            },
+                        },
+                    },
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11 } },
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#f1f5f9' },
+                        ticks: {
+                            font: { size: 11 },
+                            callback: function (val) {
+                                if (Math.abs(val) >= 1000000) {
+                                    return 'Rp' + (val / 1000000).toLocaleString('id-ID') + 'jt';
+                                }
+                                if (Math.abs(val) >= 1000) {
+                                    return 'Rp' + (val / 1000).toLocaleString('id-ID') + 'rb';
+                                }
+                                return 'Rp' + val;
+                            },
+                        },
+                    },
+                },
+            },
+        });
+    } catch (err) {
+        console.error('Failed to initialize company trend chart:', err);
+    }
+}
+document.addEventListener('DOMContentLoaded', () => initializeCompanyTrendChart(document));
+document.body.addEventListener('htmx:afterSettle', (event) => {
+    initializeCompanyTrendChart(event.detail?.target || document);
 });

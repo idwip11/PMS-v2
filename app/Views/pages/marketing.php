@@ -20,7 +20,7 @@
                     <?php endforeach; ?>
                 </select>
             </div>
-            <fieldset class="marketing-gh-filter">
+            <?php if ($filter->propertyId() === 1): ?><fieldset class="marketing-gh-filter">
                 <legend class="form-label small fw-semibold mb-1">Guesthouse</legend>
                 <div class="d-flex flex-wrap gap-2">
                     <label class="marketing-filter-choice"><input class="form-check-input" type="checkbox" data-marketing-all-gh <?= $filter->includesAllGuesthouses() ? 'checked' : '' ?>><span>Semua GH</span></label>
@@ -28,7 +28,7 @@
                         <label class="marketing-filter-choice"><input class="form-check-input" type="checkbox" name="guesthouses[]" value="<?= $guesthouse ?>" data-marketing-gh <?= in_array($guesthouse, $filter->guesthouses(), true) ? 'checked' : '' ?>><span>GH <?= $guesthouse ?></span></label>
                     <?php endforeach; ?>
                 </div>
-            </fieldset>
+            </fieldset><?php endif; ?>
             <div class="d-flex gap-2 ms-lg-auto"><a class="btn btn-outline-secondary" href="<?= site_url('marketing') ?>">Reset</a><button class="btn btn-primary" type="submit">Terapkan</button></div>
         </div>
     </form>

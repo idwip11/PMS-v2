@@ -12,7 +12,7 @@ class MaintenanceScheduleService
     /**
      * @return array{created:int, skipped:int, due:int}
      */
-    public function generateDueTickets(?int $changedByUserId = null): array
+    public function generateDueTickets(?int $changedByUserId = null, ?int $propertyId = null): array
     {
         $db = db_connect();
         $now = new DateTimeImmutable('now', new DateTimeZone(config('App')->appTimezone));
@@ -22,8 +22,11 @@ class MaintenanceScheduleService
             ->join('maintenance_categories', 'maintenance_categories.id = room_assets.maintenance_category_id')
             ->join('rooms', 'rooms.id = room_assets.room_id')
             ->where('maintenance_schedules.is_active', 1)
-            ->where('room_assets.is_active', 1)
-            ->get()->getResultArray();
+            ->where('room_assets.is_active', 1);
+        if ($propertyId !== null) {
+            $schedules->where('rooms.property_id', $propertyId);
+        }
+        $schedules = $schedules->get()->getResultArray();
 
         $result = ['created' => 0, 'skipped' => 0, 'due' => 0];
         foreach ($schedules as $schedule) {
@@ -107,7 +110,7 @@ class MaintenanceScheduleService
     public function completeSchedule(int $scheduleId, string $completedAt): ?string
     {
         $db = db_connect();
-        $schedule = $db->table('maintenance_schedules')->where('id', $scheduleId)->get()->getRowArray();
+        $schedule = $db->table('maintenance_schedules')->select('maintenance_schedules.*')->join('room_assets', 'room_assets.id = maintenance_schedules.room_asset_id')->join('rooms', 'rooms.id = room_assets.room_id')->where('rooms.property_id', PropertyContext::activeId())->where('maintenance_schedules.id', $scheduleId)->get()->getRowArray();
         if ($schedule === null) {
             return null;
         }

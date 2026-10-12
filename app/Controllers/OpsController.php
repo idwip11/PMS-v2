@@ -6,23 +6,59 @@ use App\Libraries\ExtraBedService;
 use App\Libraries\ImageUploadService;
 use App\Libraries\MaintenanceReportService;
 use App\Libraries\RoleAccess;
+use App\Libraries\PropertyPricing;
+use App\Libraries\PropertyContext;
 
 class OpsController extends BaseController
 {
     private const TABS = ['overview', 'expenses', 'inventory', 'extra_beds', 'maintenance', 'shifts'];
     private const INVENTORY_SECTIONS = ['amenities', 'spare_parts', 'supplies', 'history'];
-    private const EXPENSE_CATEGORIES = [
-        'Kebutuhan Operasional Guesthouse',
-        'Listrik',
-        'WiFi/Internet/Pulsa',
-        'Marketing',
-        'Gaji Pegawai',
-        'Maintenance',
-        'Laundry',
-        'Sewa Lobby/Resepsionis',
-        'Fee Kerjasama',
-        'Lain-lain',
-    ];
+
+    public static function isKosProperty(?int $propertyId = null): bool
+    {
+        $propertyId ??= PropertyContext::activeId();
+        if ($propertyId === 3 || (string) session('activePropertyCode') === 'KOS_MITRA') {
+            return true;
+        }
+        $mode = PropertyPricing::forProperty($propertyId)['pricing_mode'] ?? '';
+        return $mode === 'room_monthly';
+    }
+
+    public static function expenseCategories(?int $propertyId = null): array
+    {
+        $isKos = self::isKosProperty($propertyId);
+        $operationalLabel = $isKos ? 'Kebutuhan Operasional Kos' : 'Kebutuhan Operasional Guesthouse';
+
+        return [
+            $operationalLabel,
+            'Listrik',
+            'WiFi/Internet/Pulsa',
+            'Marketing',
+            'Gaji Pegawai',
+            'Maintenance',
+            'Laundry',
+            'Sewa Lobby/Resepsionis',
+            'Fee Kerjasama',
+            'Lain-lain',
+        ];
+    }
+
+    public static function allValidCategories(): array
+    {
+        return [
+            'Kebutuhan Operasional Guesthouse',
+            'Kebutuhan Operasional Kos',
+            'Listrik',
+            'WiFi/Internet/Pulsa',
+            'Marketing',
+            'Gaji Pegawai',
+            'Maintenance',
+            'Laundry',
+            'Sewa Lobby/Resepsionis',
+            'Fee Kerjasama',
+            'Lain-lain',
+        ];
+    }
 
     public function index(): string
     {
@@ -81,26 +117,27 @@ class OpsController extends BaseController
         } elseif ($tab === 'expenses') {
             $data['expenseHistoryFilters'] = $this->expenseHistoryFilters();
             $perPage = 10;
-            $totalBuilder = $db->table('expenses');
+            $totalBuilder = $db->table('expenses')->where('expenses.property_id', PropertyContext::activeId());
             $this->applyExpenseHistoryFilters($totalBuilder, $data['expenseHistoryFilters']);
             $totalItems = $totalBuilder->countAllResults();
             $totalPages = max(1, (int) ceil($totalItems / $perPage));
             $page = min($this->page(), $totalPages);
-            $itemsBuilder = $db->table('expenses')->select('expenses.*, users.full_name AS logged_by')->join('users', 'users.id = expenses.logged_by_user_id', 'left');
+            $itemsBuilder = $db->table('expenses')->select('expenses.*, users.full_name AS logged_by')->join('users', 'users.id = expenses.logged_by_user_id', 'left')->where('expenses.property_id', PropertyContext::activeId());
             $this->applyExpenseHistoryFilters($itemsBuilder, $data['expenseHistoryFilters']);
             $data['items'] = $itemsBuilder->orderBy('date_incurred', 'DESC')->orderBy('expenses.id', 'DESC')->limit($perPage, ($page - 1) * $perPage)->get()->getResultArray();
             $data['items'] = $this->attachExpenseGuesthouses($db, $data['items']);
-            $data['expenseCategories'] = self::EXPENSE_CATEGORIES;
+            $data['expenseCategories'] = self::expenseCategories();
             $data['pagination'] = ['page' => $page, 'perPage' => $perPage, 'totalItems' => $totalItems, 'totalPages' => $totalPages];
         } elseif ($tab === 'inventory') {
             if ($data['inventorySection'] === 'history') {
                 $perPage = 15;
-                $totalItems = $db->table('inventory_stock_movements')->countAllResults();
+                $totalItems = $db->table('inventory_stock_movements')->join('inventory_items', 'inventory_items.id = inventory_stock_movements.inventory_item_id')->where('inventory_items.property_id', PropertyContext::activeId())->countAllResults();
                 $totalPages = max(1, (int) ceil($totalItems / $perPage));
                 $page = min($this->page(), $totalPages);
                 $data['items'] = $db->table('inventory_stock_movements')
                     ->select('inventory_stock_movements.*, inventory_items.name AS item_name, inventory_items.unit, maintenance_tickets.ticket_number, rooms.room_number, users.full_name AS created_by_name')
                     ->join('inventory_items', 'inventory_items.id = inventory_stock_movements.inventory_item_id')
+                    ->where('inventory_items.property_id', PropertyContext::activeId())
                     ->join('maintenance_tickets', "maintenance_tickets.id = inventory_stock_movements.reference_id AND inventory_stock_movements.reference_type = 'MaintenanceWorkOrder'", 'left')
                     ->join('rooms', 'rooms.id = maintenance_tickets.room_id', 'left')
                     ->join('users', 'users.id = inventory_stock_movements.created_by_user_id', 'left')
@@ -114,7 +151,7 @@ class OpsController extends BaseController
                 if ($data['inventorySection'] === 'amenities') {
                     $this->ensureDefaultAmenities($db);
                 }
-                $data['items'] = $db->table('inventory_items')->where('item_type', $itemType)->where('is_active', 1)->orderBy('name', 'ASC')->get()->getResultArray();
+                $data['items'] = $db->table('inventory_items')->where('property_id', PropertyContext::activeId())->where('item_type', $itemType)->where('is_active', 1)->orderBy('name', 'ASC')->get()->getResultArray();
                 $data['lowStockVendors'] = $data['inventorySection'] === 'amenities' ? $this->lowStockVendors($data['items']) : [];
             }
         } elseif ($tab === 'extra_beds') {
@@ -128,7 +165,7 @@ class OpsController extends BaseController
             $data['extraBedUpcoming'] = $extraBeds->upcomingAllocations();
             $data['items'] = [];
         } elseif ($tab === 'maintenance') {
-            $data['rooms'] = $db->table('rooms')->orderBy('room_number', 'ASC')->get()->getResultArray();
+            $data['rooms'] = $db->table('rooms')->where('property_id', PropertyContext::activeId())->orderBy('room_number', 'ASC')->get()->getResultArray();
             $data['categories'] = $db->table('maintenance_categories')->where('is_active', 1)->orderBy('name', 'ASC')->get()->getResultArray();
 
             if ($data['maintenanceSection'] === 'summary') {
@@ -142,6 +179,7 @@ class OpsController extends BaseController
                 $assets = $db->table('room_assets')
                     ->select('room_assets.*, rooms.room_number, maintenance_categories.name AS category_name')
                     ->join('rooms', 'rooms.id = room_assets.room_id')
+                    ->where('rooms.property_id', PropertyContext::activeId())
                     ->join('maintenance_categories', 'maintenance_categories.id = room_assets.maintenance_category_id')
                     ->orderBy('rooms.room_number', 'ASC')
                     ->orderBy('room_assets.asset_name', 'ASC');
@@ -154,16 +192,18 @@ class OpsController extends BaseController
                 $data['roomAssets'] = $db->table('room_assets')
                     ->select('room_assets.*, rooms.room_number, maintenance_categories.name AS category_name')
                     ->join('rooms', 'rooms.id = room_assets.room_id')
+                    ->where('rooms.property_id', PropertyContext::activeId())
                     ->join('maintenance_categories', 'maintenance_categories.id = room_assets.maintenance_category_id')
                     ->where('room_assets.is_active', 1)
                     ->orderBy('rooms.room_number', 'ASC')
                     ->orderBy('room_assets.asset_name', 'ASC')
                     ->get()->getResultArray();
-                $data['users'] = $db->table('users')->orderBy('full_name', 'ASC')->get()->getResultArray();
+                $data['users'] = $this->propertyUsers($db);
                 $data['items'] = $db->table('maintenance_schedules')
                     ->select('maintenance_schedules.*, room_assets.asset_name, rooms.room_number, maintenance_categories.name AS category_name, users.full_name AS assignee_name')
                     ->join('room_assets', 'room_assets.id = maintenance_schedules.room_asset_id')
                     ->join('rooms', 'rooms.id = room_assets.room_id')
+                    ->where('rooms.property_id', PropertyContext::activeId())
                     ->join('maintenance_categories', 'maintenance_categories.id = room_assets.maintenance_category_id')
                     ->join('users', 'users.id = maintenance_schedules.default_assignee_user_id', 'left')
                     ->orderBy('maintenance_schedules.is_active', 'DESC')
@@ -180,16 +220,18 @@ class OpsController extends BaseController
                 $data['items'] = $db->table('maintenance_tickets')
                     ->select('maintenance_tickets.*, rooms.room_number, maintenance_categories.name AS category_name, room_assets.asset_name, assignee.full_name AS assigned_to_name')
                     ->join('rooms', 'rooms.id = maintenance_tickets.room_id')
+                    ->where('rooms.property_id', PropertyContext::activeId())
                     ->join('maintenance_categories', 'maintenance_categories.id = maintenance_tickets.maintenance_category_id', 'left')
                     ->join('room_assets', 'room_assets.id = maintenance_tickets.room_asset_id', 'left')
                     ->join('users assignee', 'assignee.id = maintenance_tickets.assigned_to_user_id', 'left')
                     ->whereIn('maintenance_tickets.status', ['Open', 'Assigned', 'In_Progress', 'Waiting_Part', 'Completed'])
                     ->orderBy('maintenance_tickets.created_at', 'DESC')
                     ->get()->getResultArray();
-                $data['users'] = $db->table('users')->orderBy('full_name', 'ASC')->get()->getResultArray();
+                $data['users'] = $this->propertyUsers($db);
                 $data['roomAssets'] = $db->table('room_assets')
                     ->select('room_assets.*, rooms.room_number, maintenance_categories.name AS category_name')
                     ->join('rooms', 'rooms.id = room_assets.room_id')
+                    ->where('rooms.property_id', PropertyContext::activeId())
                     ->join('maintenance_categories', 'maintenance_categories.id = room_assets.maintenance_category_id')
                     ->where('room_assets.is_active', 1)
                     ->orderBy('rooms.room_number', 'ASC')
@@ -197,8 +239,8 @@ class OpsController extends BaseController
                     ->get()->getResultArray();
             }
         } else {
-            $data['items'] = $db->table('shifts')->select('shifts.*, users.full_name')->join('users', 'users.id = shifts.user_id')->orderBy('shift_date', 'DESC')->get()->getResultArray();
-            $data['users'] = $db->table('users')->orderBy('full_name', 'ASC')->get()->getResultArray();
+            $data['items'] = $db->table('shifts')->select('shifts.*, users.full_name')->join('users', 'users.id = shifts.user_id')->where('shifts.property_id', PropertyContext::activeId())->orderBy('shift_date', 'DESC')->get()->getResultArray();
+            $data['users'] = $this->propertyUsers($db);
         }
 
         return view('components/ops_panel', $data);
@@ -214,12 +256,12 @@ class OpsController extends BaseController
         $year = (int) $this->request->getPost('year');
         $month = (int) $this->request->getPost('month');
         $amount = max(0, (float) $this->request->getPost('projected_amount'));
-        $existing = $db->table('operational_budgets')->where(['year' => $year, 'month' => $month])->get()->getRowArray();
+        $existing = $db->table('operational_budgets')->where(['property_id' => PropertyContext::activeId(), 'year' => $year, 'month' => $month])->get()->getRowArray();
         if ($existing !== null) {
             $db->table('operational_budgets')->where('id', $existing['id'])->update(['projected_amount' => $amount, 'updated_at' => date('Y-m-d H:i:s')]);
         } else {
             $now = date('Y-m-d H:i:s');
-            $db->table('operational_budgets')->insert(['year' => $year, 'month' => $month, 'projected_amount' => $amount, 'created_at' => $now, 'updated_at' => $now]);
+            $db->table('operational_budgets')->insert(['property_id' => PropertyContext::activeId(), 'year' => $year, 'month' => $month, 'projected_amount' => $amount, 'created_at' => $now, 'updated_at' => $now]);
         }
 
         return $this->feedback('success', 'Budget operasional berhasil disimpan.');
@@ -238,7 +280,7 @@ class OpsController extends BaseController
         }
 
         $db = db_connect();
-        $room = $db->table('rooms')->where('id', $roomId)->get()->getRowArray();
+        $room = $db->table('rooms')->where('property_id', PropertyContext::activeId())->where('id', $roomId)->get()->getRowArray();
         if ($room === null) {
             return $this->feedback('danger', 'Kamar maintenance tidak ditemukan.');
         }
@@ -299,7 +341,7 @@ class OpsController extends BaseController
 
     public function createExpense()
     {
-        if (! $this->validate(['description' => 'required|max_length[255]', 'category' => 'required|in_list[' . implode(',', self::EXPENSE_CATEGORIES) . ']', 'amount' => 'required|decimal', 'date_incurred' => 'required|valid_date[Y-m-d]'])) {
+        if (! $this->validate(['description' => 'required|max_length[255]', 'category' => 'required|in_list[' . implode(',', self::allValidCategories()) . ']', 'amount' => 'required', 'date_incurred' => 'required|valid_date[Y-m-d]'])) {
             return $this->feedback('danger', implode(' ', $this->validator->getErrors()));
         }
         $receipt = null;
@@ -314,7 +356,7 @@ class OpsController extends BaseController
 
         $guesthouses = $this->guesthousesPost();
         if ($guesthouses === false) {
-            return $this->feedback('danger', 'Pilihan Guesthouse tidak valid.');
+            return $this->feedback('danger', self::isKosProperty() ? 'Pilihan Kamar tidak valid.' : 'Pilihan Guesthouse tidak valid.');
         }
         $category = trim((string) $this->request->getPost('category'));
         $isCompanyExpense = $guesthouses === [0];
@@ -327,10 +369,11 @@ class OpsController extends BaseController
         $now = date('Y-m-d H:i:s');
         $db->transStart();
         $db->table('expenses')->insert([
+            'property_id' => PropertyContext::activeId(),
             'logged_by_user_id' => (int) session('userId'),
             'description' => trim((string) $this->request->getPost('description')),
             'category' => $category,
-            'amount' => max(0, (float) $this->request->getPost('amount')),
+            'amount' => max(0, $this->parseMoney($this->request->getPost('amount'))),
             'date_incurred' => $this->request->getPost('date_incurred'),
             'notes' => $this->nullablePost('notes'),
             'status' => 'Approved',
@@ -351,9 +394,16 @@ class OpsController extends BaseController
 
     public function receipt(int $id)
     {
+        try {
+            $proofScope = \App\Libraries\FinanceProofScope::current('expense_receipt');
+        } catch (\RuntimeException) {
+            return $this->response->setStatusCode(404)->setBody('Bukti tidak ditemukan.');
+        }
+        $propertyIds = $proofScope['propertyIds'];
+
         $db = db_connect();
-        $expenseQuery = $db->table('expenses')->select('receipt_url, description')->where('id', $id);
-        $ownerGuesthouse = RoleAccess::ownerGuesthouse((string) session('role'));
+        $expenseQuery = $db->table('expenses')->select('receipt_url, description')->whereIn('property_id', $propertyIds)->where('id', $id);
+        $ownerGuesthouse = $proofScope['ownerGuesthouse'];
         if ($ownerGuesthouse !== null) {
             $expenseQuery->where(
                 "(EXISTS (SELECT 1 FROM expense_guesthouses eg WHERE eg.expense_id = expenses.id AND eg.guesthouse = {$ownerGuesthouse})"
@@ -380,7 +430,7 @@ class OpsController extends BaseController
             ->setHeader('Content-Type', $mimeType)
             ->setHeader('Content-Length', (string) filesize($absolutePath))
             ->setHeader('Content-Disposition', 'inline; filename="' . $safeName . '.' . ($extension === 'pdf' ? 'pdf' : 'jpg') . '"')
-            ->setHeader('Cache-Control', 'private, max-age=300')
+            ->setHeader('Cache-Control', 'private, no-store, max-age=0, must-revalidate')
             ->setHeader('X-Content-Type-Options', 'nosniff')
             ->setBody((string) file_get_contents($absolutePath));
     }
@@ -388,30 +438,31 @@ class OpsController extends BaseController
     public function editExpense(int $id): string
     {
         $db = db_connect();
-        $expense = $db->table('expenses')->where('id', $id)->get()->getRowArray();
+        $expense = $db->table('expenses')->where('property_id', PropertyContext::activeId())->where('id', $id)->get()->getRowArray();
         if ($expense === null || $this->isMaintenanceGeneratedExpense($expense)) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Expense ini tidak dapat diedit dari riwayat.');
         }
         $guesthouses = $db->table('expense_guesthouses')->select('guesthouse')->where('expense_id', $id)->orderBy('guesthouse', 'ASC')->get()->getResultArray();
         $auditLogs = $db->table('expense_audit_logs')->select('expense_audit_logs.*, users.full_name AS changed_by_name')->join('users', 'users.id = expense_audit_logs.changed_by_user_id', 'left')->where('expense_id', $id)->orderBy('expense_audit_logs.id', 'DESC')->limit(10)->get()->getResultArray();
-        return view('components/modals/expense_edit', ['expense' => $expense, 'guesthouses' => array_map('intval', array_column($guesthouses, 'guesthouse')), 'auditLogs' => $auditLogs, 'expenseCategories' => self::EXPENSE_CATEGORIES]);
+        return view('components/modals/expense_edit', ['expense' => $expense, 'guesthouses' => array_map('intval', array_column($guesthouses, 'guesthouse')), 'auditLogs' => $auditLogs, 'expenseCategories' => self::expenseCategories((int) $expense['property_id'])]);
     }
 
     public function updateExpense(int $id)
     {
-        if (! $this->validate(['description' => 'required|max_length[255]', 'category' => 'required|in_list[' . implode(',', self::EXPENSE_CATEGORIES) . ']', 'amount' => 'required|decimal', 'date_incurred' => 'required|valid_date[Y-m-d]'])) {
+        if (! $this->validate(['description' => 'required|max_length[255]', 'category' => 'required|in_list[' . implode(',', self::allValidCategories()) . ']', 'amount' => 'required', 'date_incurred' => 'required|valid_date[Y-m-d]'])) {
             return $this->feedback('danger', implode(' ', $this->validator->getErrors()));
         }
         $guesthouses = $this->guesthousesPost();
-        if ($guesthouses === false) return $this->feedback('danger', 'Pilihan Guesthouse tidak valid.');
+        if ($guesthouses === false) return $this->feedback('danger', self::isKosProperty() ? 'Pilihan Kamar tidak valid.' : 'Pilihan Guesthouse tidak valid.');
         $isCompanyExpense = $guesthouses === [0];
         $category = trim((string) $this->request->getPost('category'));
         if ($category === 'Fee Kerjasama' && ! $isCompanyExpense) return $this->feedback('danger', 'Kategori Fee Kerjasama wajib dialokasikan ke Perusahaan.');
         $allocatedGuesthouses = $isCompanyExpense ? [] : $guesthouses;
         $db = db_connect();
-        $expense = $db->table('expenses')->where('id', $id)->get()->getRowArray();
+        $expense = $db->table('expenses')->where('property_id', PropertyContext::activeId())->where('id', $id)->get()->getRowArray();
         if ($expense === null) return $this->feedback('danger', 'Expense tidak ditemukan.');
         if ($this->isMaintenanceGeneratedExpense($expense)) return $this->feedback('danger', 'Expense dari Maintenance hanya dapat diubah melalui work order Maintenance.');
+        if (\App\Libraries\CashSourceGuard::expenseLinked($db, $id)) return $this->feedback('danger', 'Expense sudah terhubung pembayaran kas; sumber tidak boleh ditimpa.');
         $receiptPath = $expense['receipt_url'];
         $file = $this->request->getFile('receipt');
         if ($file !== null && $file->getError() !== UPLOAD_ERR_NO_FILE) {
@@ -419,9 +470,14 @@ class OpsController extends BaseController
         }
         $currentGuesthouses = $db->table('expense_guesthouses')->select('guesthouse')->where('expense_id', $id)->orderBy('guesthouse', 'ASC')->get()->getResultArray();
         $before = ['description' => $expense['description'], 'category' => $expense['category'], 'amount' => (float) $expense['amount'], 'date_incurred' => $expense['date_incurred'], 'notes' => $expense['notes'], 'guesthouses' => array_map('intval', array_column($currentGuesthouses, 'guesthouse')), 'receipt_url' => $expense['receipt_url']];
-        $after = ['description' => trim((string) $this->request->getPost('description')), 'category' => $category, 'amount' => max(0, (float) $this->request->getPost('amount')), 'date_incurred' => (string) $this->request->getPost('date_incurred'), 'notes' => $this->nullablePost('notes'), 'guesthouses' => $allocatedGuesthouses, 'receipt_url' => $receiptPath];
+        $after = ['description' => trim((string) $this->request->getPost('description')), 'category' => $category, 'amount' => max(0, $this->parseMoney($this->request->getPost('amount'))), 'date_incurred' => (string) $this->request->getPost('date_incurred'), 'notes' => $this->nullablePost('notes'), 'guesthouses' => $allocatedGuesthouses, 'receipt_url' => $receiptPath];
         $now = date('Y-m-d H:i:s');
         $db->transStart();
+        $db->query('SELECT id FROM expenses WHERE id=? FOR UPDATE', [$id]);
+        if (\App\Libraries\CashSourceGuard::expenseLinked($db, $id)) {
+            $db->transRollback();
+            return $this->feedback('danger', 'Expense sudah terhubung pembayaran kas; sumber tidak boleh ditimpa.');
+        }
         $db->table('expenses')->where('id', $id)->update(['description' => $after['description'], 'category' => $after['category'], 'amount' => $after['amount'], 'date_incurred' => $after['date_incurred'], 'notes' => $after['notes'], 'guesthouse' => $allocatedGuesthouses[0] ?? 0, 'receipt_url' => $receiptPath, 'updated_at' => $now]);
         $db->table('expense_guesthouses')->where('expense_id', $id)->delete();
         foreach ($allocatedGuesthouses as $guesthouse) $db->table('expense_guesthouses')->insert(['expense_id' => $id, 'guesthouse' => $guesthouse]);
@@ -433,7 +489,7 @@ class OpsController extends BaseController
     public function deleteExpense(int $id)
     {
         $db = db_connect();
-        $expense = $db->table('expenses')->where('id', $id)->get()->getRowArray();
+        $expense = $db->table('expenses')->where('property_id', PropertyContext::activeId())->where('id', $id)->get()->getRowArray();
         if ($expense === null) {
             return $this->feedback('danger', 'Expense tidak ditemukan.');
         }
@@ -444,6 +500,11 @@ class OpsController extends BaseController
         $db->transStart();
         // Explicit deletes keep this safe even on installations without the
         // optional CASCADE foreign keys from the newer expense migrations.
+        $db->query('SELECT id FROM expenses WHERE id=? FOR UPDATE', [$id]);
+        if (\App\Libraries\CashSourceGuard::expenseLinked($db, $id)) {
+            $db->transRollback();
+            return $this->feedback('danger', 'Expense yang memiliki pembayaran kas tidak boleh dihapus.');
+        }
         $db->table('expense_guesthouses')->where('expense_id', $id)->delete();
         $db->table('expense_audit_logs')->where('expense_id', $id)->delete();
         $db->table('expenses')->where('id', $id)->delete();
@@ -484,6 +545,7 @@ class OpsController extends BaseController
         $openingStock = max(0, (int) $this->request->getPost('current_stock'));
         $db->transStart();
         $db->table('inventory_items')->insert([
+            'property_id' => PropertyContext::activeId(),
             'name' => trim((string) $this->request->getPost('name')),
             'category' => trim((string) $this->request->getPost('category')),
             'current_stock' => $openingStock,
@@ -520,7 +582,7 @@ class OpsController extends BaseController
     {
         $stock = max(0, (int) $this->request->getPost('current_stock'));
         $db = db_connect();
-        $item = $db->table('inventory_items')->where('id', $id)->get()->getRowArray();
+        $item = $db->table('inventory_items')->where('property_id', PropertyContext::activeId())->where('id', $id)->get()->getRowArray();
         if ($item === null) {
             return $this->feedback('danger', 'Item stok tidak ditemukan.');
         }
@@ -562,7 +624,7 @@ class OpsController extends BaseController
         }
 
         $db = db_connect();
-        $item = $db->table('inventory_items')->where('id', $id)->where('item_type', 'Amenity')->get()->getRowArray();
+        $item = $db->table('inventory_items')->where('property_id', PropertyContext::activeId())->where('id', $id)->where('item_type', 'Amenity')->get()->getRowArray();
         if ($item === null) {
             return $this->feedback('danger', 'Item amenities tidak ditemukan.');
         }
@@ -607,7 +669,7 @@ class OpsController extends BaseController
         if ($vendorWhatsapp === false) {
             return $this->feedback('danger', 'Nomor WhatsApp vendor tidak valid. Gunakan format 08xx atau 62xx.');
         }
-        db_connect()->table('inventory_items')->where('id', $id)->update([
+        db_connect()->table('inventory_items')->where('property_id', PropertyContext::activeId())->where('id', $id)->update([
             'vendor_whatsapp' => $vendorWhatsapp,
             'updated_at' => date('Y-m-d H:i:s'),
         ]);
@@ -620,7 +682,11 @@ class OpsController extends BaseController
         if (! $this->validate(['user_id' => 'required|is_natural_no_zero', 'shift_date' => 'required|valid_date[Y-m-d]', 'start_time' => 'required', 'end_time' => 'required', 'shift_type' => 'required'])) {
             return $this->feedback('danger', implode(' ', $this->validator->getErrors()));
         }
+        if (db_connect()->table('user_property_roles')->where('user_id', (int) $this->request->getPost('user_id'))->where('property_id', PropertyContext::activeId())->countAllResults() === 0) {
+            return $this->feedback('danger', 'Staf tidak ditugaskan pada properti aktif.');
+        }
         db_connect()->table('shifts')->insert([
+            'property_id' => PropertyContext::activeId(),
             'user_id' => (int) $this->request->getPost('user_id'),
             'shift_date' => $this->request->getPost('shift_date'),
             'start_time' => $this->request->getPost('start_time'),
@@ -664,14 +730,21 @@ class OpsController extends BaseController
     private function guesthousesPost(): array|false
     {
         $values = $this->request->getPost('guesthouses');
+        $isHomiq = PropertyContext::activeId() === PropertyContext::HOMIQ_ID;
+        $isKos = self::isKosProperty();
+        if (! $isHomiq && ! $isKos) {
+            // Other properties (e.g. Homestay Mitra) has one owner-wide expense ledger per property
+            return $values === null || $values === '' || $values === [] || $values === ['0'] ? [0] : false;
+        }
         if ($values === null || $values === '') return [];
         if (! is_array($values)) return false;
         $guesthouses = array_values(array_unique(array_map('intval', $values)));
         if (in_array(0, $guesthouses, true)) {
             return count($guesthouses) === 1 ? [0] : false;
         }
+        $max = $isKos ? 7 : 5;
         foreach ($guesthouses as $guesthouse) {
-            if ($guesthouse < 1 || $guesthouse > 5) return false;
+            if ($guesthouse < 1 || $guesthouse > $max) return false;
         }
         sort($guesthouses);
         return $guesthouses;
@@ -685,12 +758,28 @@ class OpsController extends BaseController
         $rows = $db->table('expense_guesthouses')->whereIn('expense_id', $ids)->orderBy('guesthouse', 'ASC')->get()->getResultArray();
         $groups = [];
         foreach ($rows as $row) $groups[(int) $row['expense_id']][] = (int) $row['guesthouse'];
+        $isKos = self::isKosProperty();
+        $isHomiq = PropertyContext::activeId() === PropertyContext::HOMIQ_ID;
+
         foreach ($expenses as &$expense) {
             $guesthouses = $groups[(int) $expense['id']] ?? [];
             if ($guesthouses === [] && (int) ($expense['guesthouse'] ?? 0) > 0) $guesthouses[] = (int) $expense['guesthouse'];
-            $expense['guesthouse_labels'] = (string) ($expense['category'] ?? '') === 'Fee Kerjasama'
-                ? 'Perusahaan'
-                : ($guesthouses === [] ? 'Umum' : implode(', ', array_map(static fn (int $guesthouse): string => 'GH ' . $guesthouse, $guesthouses)));
+
+            if ($isKos) {
+                if ((string) ($expense['category'] ?? '') === 'Fee Kerjasama') {
+                    $expense['guesthouse_labels'] = 'Perusahaan';
+                } elseif ($guesthouses !== []) {
+                    $expense['guesthouse_labels'] = implode(', ', array_map(static fn (int $kamar): string => 'Kamar ' . $kamar, $guesthouses));
+                } else {
+                    $expense['guesthouse_labels'] = 'Umum';
+                }
+            } elseif ($isHomiq) {
+                $expense['guesthouse_labels'] = ((string) ($expense['category'] ?? '') === 'Fee Kerjasama')
+                    ? 'Perusahaan'
+                    : ($guesthouses === [] ? 'Umum' : implode(', ', array_map(static fn (int $guesthouse): string => 'GH ' . $guesthouse, $guesthouses)));
+            } else {
+                $expense['guesthouse_labels'] = (string) session('activePropertyName');
+            }
         }
         unset($expense);
         return $expenses;
@@ -705,6 +794,7 @@ class OpsController extends BaseController
         $tickets = $db->table('maintenance_tickets')
             ->select('maintenance_tickets.id, maintenance_tickets.ticket_number, maintenance_tickets.room_id, maintenance_tickets.labor_cost, maintenance_tickets.external_cost, maintenance_tickets.completed_at, rooms.room_number, rooms.floor')
             ->join('rooms', 'rooms.id = maintenance_tickets.room_id')
+            ->where('rooms.property_id', PropertyContext::activeId())
             ->where('maintenance_tickets.status', 'Closed')
             ->get()->getResultArray();
         foreach ($tickets as $ticket) {
@@ -720,9 +810,10 @@ class OpsController extends BaseController
 
             $ticketNumber = (string) ($ticket['ticket_number'] ?? ('WO-' . str_pad((string) $ticket['id'], 5, '0', STR_PAD_LEFT)));
             $marker = '[Maintenance Work Order: ' . $ticketNumber . ']';
-            $existing = $db->table('expenses')->select('id')->like('notes', $marker)->get()->getRowArray();
+            $existing = $db->table('expenses')->select('id')->where('property_id', PropertyContext::activeId())->like('notes', $marker)->get()->getRowArray();
             $now = date('Y-m-d H:i:s');
             $payload = [
+                'property_id' => PropertyContext::activeId(),
                 'logged_by_user_id' => (int) session('userId'),
                 'description' => 'Maintenance ' . $ticketNumber . ' · Room ' . (string) $ticket['room_number'],
                 'category' => 'Maintenance',
@@ -730,7 +821,7 @@ class OpsController extends BaseController
                 'date_incurred' => substr((string) ($ticket['completed_at'] ?? $now), 0, 10),
                 'notes' => $marker . ' Material spare part: Rp' . number_format($sparePartCost, 0, ',', '.') . '; material: Rp' . number_format($manualMaterialCost, 0, ',', '.') . '; tenaga: Rp' . number_format($laborCost, 0, ',', '.') . '.',
                 'status' => 'Approved',
-                'guesthouse' => max(0, (int) ($ticket['floor'] ?? 0)),
+                'guesthouse' => $guesthouseNum = ((int) ($ticket['floor'] ?? 0) > 0 ? (int) $ticket['floor'] : (preg_match('/\d+/', (string) ($ticket['room_number'] ?? ''), $m) ? (int) $m[0] : 0)),
                 'updated_at' => $now,
             ];
             $invoice = $db->table('maintenance_attachments')
@@ -744,10 +835,25 @@ class OpsController extends BaseController
                 $payload['receipt_url'] = (string) $invoice['file_path'];
             }
             if ($existing !== null) {
-                $db->table('expenses')->where('id', (int) $existing['id'])->update($payload);
+                $mExpenseId = (int) $existing['id'];
+                $db->transStart();
+                $db->query('SELECT id FROM expenses WHERE id=? FOR UPDATE', [$mExpenseId]);
+                if (\App\Libraries\CashSourceGuard::expenseLinked($db, $mExpenseId)) {
+                    $db->transComplete();
+                    continue;
+                }
+                $db->table('expenses')->where('id', $mExpenseId)->update($payload);
+                $db->transComplete();
             } else {
                 $payload['created_at'] = $now;
                 $db->table('expenses')->insert($payload);
+                $mExpenseId = (int) $db->insertID();
+            }
+            if ($guesthouseNum > 0 && $mExpenseId > 0) {
+                $hasEg = $db->table('expense_guesthouses')->where('expense_id', $mExpenseId)->where('guesthouse', $guesthouseNum)->countAllResults() > 0;
+                if (! $hasEg) {
+                    $db->table('expense_guesthouses')->insert(['expense_id' => $mExpenseId, 'guesthouse' => $guesthouseNum]);
+                }
             }
         }
     }
@@ -760,31 +866,39 @@ class OpsController extends BaseController
             ? new \DateTimeImmutable($requestedPeriod . '-01', new \DateTimeZone(config('App')->appTimezone))
             : $now->modify('first day of this month');
         $guesthouse = (int) $this->request->getGet('guesthouse');
-        if ($guesthouse < 1 || $guesthouse > 5) $guesthouse = 0;
+        if (PropertyContext::activeId() !== PropertyContext::HOMIQ_ID || $guesthouse < 1 || $guesthouse > 5) $guesthouse = 0;
         $year = (int) $period->format('Y');
         $month = (int) $period->format('m');
         $firstDay = $period->modify('first day of this month')->format('Y-m-d');
         $lastDay = $period->modify('last day of this month')->format('Y-m-d');
-        $actualBuilder = $db->table('expenses')->selectSum('amount')->where('status !=', 'Rejected')->where('date_incurred >=', $firstDay)->where('date_incurred <=', $lastDay);
+        $actualBuilder = $db->table('expenses')->selectSum('amount')->where('property_id', PropertyContext::activeId())->where('status !=', 'Rejected')->where('date_incurred >=', $firstDay)->where('date_incurred <=', $lastDay);
         $this->applyExpenseGuesthouseFilter($actualBuilder, $guesthouse);
         $actualRow = $actualBuilder->get()->getRowArray();
         $actual = (float) ($actualRow['amount'] ?? 0);
         $expenseCategoryBuilder = $db->table('expenses')
             ->select('category, SUM(amount) AS total')
+            ->where('property_id', PropertyContext::activeId())
             ->where('status !=', 'Rejected')->where('date_incurred >=', $firstDay)->where('date_incurred <=', $lastDay);
         $this->applyExpenseGuesthouseFilter($expenseCategoryBuilder, $guesthouse);
         $expenseCategoryRows = $expenseCategoryBuilder->groupBy('category')->orderBy('total', 'DESC')->get()->getResultArray();
-        $expenseCategories = array_map(static fn (array $row): array => [
-            'name' => trim((string) ($row['category'] ?? '')) ?: 'Tanpa kategori',
-            'amount' => (float) ($row['total'] ?? 0),
-        ], $expenseCategoryRows);
-        $budgetRow = $db->table('operational_budgets')->where(['year' => $year, 'month' => $month])->get()->getRowArray();
+        $isKos = self::isKosProperty();
+        $expenseCategories = array_map(static function (array $row) use ($isKos): array {
+            $name = trim((string) ($row['category'] ?? '')) ?: 'Tanpa kategori';
+            if ($isKos && $name === 'Kebutuhan Operasional Guesthouse') {
+                $name = 'Kebutuhan Operasional Kos';
+            }
+            return [
+                'name' => $name,
+                'amount' => (float) ($row['total'] ?? 0),
+            ];
+        }, $expenseCategoryRows);
+        $budgetRow = $db->table('operational_budgets')->where(['property_id' => PropertyContext::activeId(), 'year' => $year, 'month' => $month])->get()->getRowArray();
         $budget = (float) ($budgetRow['projected_amount'] ?? 0);
-        $lowStockItems = $db->table('inventory_items')->where('is_active', 1)->where('current_stock <= min_threshold', null, false)->orderBy('current_stock', 'ASC')->orderBy('name', 'ASC')->get()->getResultArray();
-        $maintenanceRooms = $db->table('rooms')->where('status', 'Maintenance')->countAllResults();
-        $urgentTickets = $db->table('maintenance_tickets')->whereIn('status', ['Open', 'Assigned', 'In_Progress', 'Waiting_Part'])->whereIn('priority', ['Urgent', 'Critical'])->countAllResults();
+        $lowStockItems = $db->table('inventory_items')->where('property_id', PropertyContext::activeId())->where('is_active', 1)->where('current_stock <= min_threshold', null, false)->orderBy('current_stock', 'ASC')->orderBy('name', 'ASC')->get()->getResultArray();
+        $maintenanceRooms = $db->table('rooms')->where('property_id', PropertyContext::activeId())->where('status', 'Maintenance')->countAllResults();
+        $urgentTickets = $db->table('maintenance_tickets')->join('rooms', 'rooms.id = maintenance_tickets.room_id')->where('rooms.property_id', PropertyContext::activeId())->whereIn('maintenance_tickets.status', ['Open', 'Assigned', 'In_Progress', 'Waiting_Part'])->whereIn('maintenance_tickets.priority', ['Urgent', 'Critical'])->countAllResults();
         $roomMaintenance = [];
-        $roomsInMaintenance = $db->table('rooms')->where('status', 'Maintenance')->orderBy('room_number', 'ASC')->get()->getResultArray();
+        $roomsInMaintenance = $db->table('rooms')->where('property_id', PropertyContext::activeId())->where('status', 'Maintenance')->orderBy('room_number', 'ASC')->get()->getResultArray();
         foreach ($roomsInMaintenance as $room) {
             $ticket = $db->table('maintenance_tickets')
                 ->where('room_id', $room['id'])->where('blocks_room', 1)
@@ -800,15 +914,15 @@ class OpsController extends BaseController
             $periodMonth = (int) $chartPeriod->format('m');
             $periodStart = $chartPeriod->modify('first day of this month')->format('Y-m-d');
             $periodEnd = $chartPeriod->modify('last day of this month')->format('Y-m-d');
-            $periodBudget = $db->table('operational_budgets')->where(['year' => $periodYear, 'month' => $periodMonth])->get()->getRowArray();
-            $periodActualBuilder = $db->table('expenses')->selectSum('amount')->where('status !=', 'Rejected')->where('date_incurred >=', $periodStart)->where('date_incurred <=', $periodEnd);
+            $periodBudget = $db->table('operational_budgets')->where(['property_id' => PropertyContext::activeId(), 'year' => $periodYear, 'month' => $periodMonth])->get()->getRowArray();
+            $periodActualBuilder = $db->table('expenses')->selectSum('amount')->where('property_id', PropertyContext::activeId())->where('status !=', 'Rejected')->where('date_incurred >=', $periodStart)->where('date_incurred <=', $periodEnd);
             $this->applyExpenseGuesthouseFilter($periodActualBuilder, $guesthouse);
             $periodActualRow = $periodActualBuilder->get()->getRowArray();
             $labels[] = $chartPeriod->format('M Y');
             $budgets[] = (float) ($periodBudget['projected_amount'] ?? 0);
             $actuals[] = (float) ($periodActualRow['amount'] ?? 0);
         }
-        $recentExpenseBuilder = $db->table('expenses')->select('expenses.*, users.full_name AS logged_by')->join('users', 'users.id = expenses.logged_by_user_id', 'left')->where('expenses.status !=', 'Rejected')->where('expenses.date_incurred >=', $firstDay)->where('expenses.date_incurred <=', $lastDay);
+        $recentExpenseBuilder = $db->table('expenses')->select('expenses.*, users.full_name AS logged_by')->join('users', 'users.id = expenses.logged_by_user_id', 'left')->where('expenses.property_id', PropertyContext::activeId())->where('expenses.status !=', 'Rejected')->where('expenses.date_incurred >=', $firstDay)->where('expenses.date_incurred <=', $lastDay);
         $this->applyExpenseGuesthouseFilter($recentExpenseBuilder, $guesthouse);
         $recentExpenses = $recentExpenseBuilder->orderBy('date_incurred', 'DESC')->orderBy('expenses.id', 'DESC')->limit(5)->get()->getResultArray();
         return [
@@ -837,10 +951,18 @@ class OpsController extends BaseController
     private function expenseHistoryFilters(): array
     {
         $category = trim((string) $this->request->getGet('category'));
-        if (! in_array($category, self::EXPENSE_CATEGORIES, true)) $category = '';
+        if (! in_array($category, self::allValidCategories(), true)) $category = '';
 
         $guesthouse = (string) $this->request->getGet('guesthouse');
-        if ($guesthouse !== 'company' && ! in_array($guesthouse, ['1', '2', '3', '4', '5'], true)) {
+        $isHomiq = PropertyContext::activeId() === PropertyContext::HOMIQ_ID;
+        $isKos = self::isKosProperty();
+        if (! $isHomiq && ! $isKos) $guesthouse = 'all';
+
+        $validOptions = $isKos
+            ? ['1', '2', '3', '4', '5', '6', '7']
+            : ['1', '2', '3', '4', '5'];
+
+        if ($guesthouse !== 'company' && ! in_array($guesthouse, $validOptions, true)) {
             $guesthouse = 'all';
         }
 
@@ -853,7 +975,17 @@ class OpsController extends BaseController
     /** @param array{category: string, guesthouse: string, month: string} $filters */
     private function applyExpenseHistoryFilters($builder, array $filters): void
     {
-        if ($filters['category'] !== '') $builder->where('expenses.category', $filters['category']);
+        if ($filters['category'] !== '') {
+            if ($filters['category'] === 'Kebutuhan Operasional Kos' || $filters['category'] === 'Kebutuhan Operasional Guesthouse') {
+                if (self::isKosProperty()) {
+                    $builder->whereIn('expenses.category', ['Kebutuhan Operasional Kos', 'Kebutuhan Operasional Guesthouse']);
+                } else {
+                    $builder->where('expenses.category', $filters['category']);
+                }
+            } else {
+                $builder->where('expenses.category', $filters['category']);
+            }
+        }
 
         if ($filters['month'] !== '') {
             $period = new \DateTimeImmutable($filters['month'] . '-01');
@@ -898,6 +1030,7 @@ class OpsController extends BaseController
         $defaultAmenities = ['Sikat Gigi', 'Sabun', 'Shampoo'];
         $existing = $db->table('inventory_items')
             ->select('name')
+            ->where('property_id', PropertyContext::activeId())
             ->where('item_type', 'Amenity')
             ->get()
             ->getResultArray();
@@ -908,6 +1041,7 @@ class OpsController extends BaseController
                 continue;
             }
             $db->table('inventory_items')->insert([
+                'property_id' => PropertyContext::activeId(),
                 'name' => $name,
                 'category' => 'Amenities',
                 'current_stock' => 0,
@@ -1008,5 +1142,13 @@ class OpsController extends BaseController
     {
         $parsed = \DateTimeImmutable::createFromFormat('!Y-m-d', $date);
         return $parsed !== false && $parsed->format('Y-m-d') === $date ? $date : null;
+    }
+
+    private function propertyUsers($db): array
+    {
+        return $db->table('users')->select('users.*, upr.role AS property_role')
+            ->join('user_property_roles upr', 'upr.user_id = users.id')
+            ->where('upr.property_id', PropertyContext::activeId())
+            ->orderBy('users.full_name', 'ASC')->get()->getResultArray();
     }
 }

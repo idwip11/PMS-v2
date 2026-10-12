@@ -3,6 +3,7 @@
 namespace App\Filters;
 
 use App\Libraries\RoleAccess;
+use App\Libraries\PropertyContext;
 use CodeIgniter\Filters\FilterInterface;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -22,7 +23,7 @@ final class AccessFilter implements FilterInterface
         }
 
         if (! $allowed) {
-            return redirect()->to(site_url(RoleAccess::landingPath($role)))
+            return redirect()->to(site_url(PropertyContext::landingPath()))
                 ->with('error', 'Anda tidak memiliki akses ke halaman tersebut.');
         }
 

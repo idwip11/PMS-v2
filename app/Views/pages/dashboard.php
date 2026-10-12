@@ -2,12 +2,14 @@
 <?= $this->section('content') ?>
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <form class="d-flex flex-column flex-sm-row gap-2" hx-get="<?= site_url('dashboard/metrics') ?>" hx-target="#dashboard-metrics" hx-push-url="<?= site_url('dashboard') ?>">
+        <?php if (\App\Libraries\PropertyContext::activeId() === 1): ?>
         <select class="form-select" name="guesthouse" aria-label="Filter Guesthouse">
             <option value="" <?= $guesthouse === null ? 'selected' : '' ?>>Semua GH</option>
             <?php for ($gh = 1; $gh <= 5; $gh++): ?>
                 <option value="<?= $gh ?>" <?= $guesthouse === $gh ? 'selected' : '' ?>>GH <?= $gh ?></option>
             <?php endfor; ?>
         </select>
+        <?php endif; ?>
         <input class="form-control" type="month" name="month" value="<?= esc($month) ?>">
         <button class="btn btn-primary">Tampilkan</button>
     </form>

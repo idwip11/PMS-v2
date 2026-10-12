@@ -16,10 +16,11 @@ final class MarketingAnalyticsFilter
         private readonly int $year,
         private readonly ?int $month,
         private readonly array $guesthouses,
+        private readonly int $propertyId,
     ) {
     }
 
-    public static function fromInput(array $input, ?DateTimeImmutable $today = null): self
+    public static function fromInput(array $input, ?DateTimeImmutable $today = null, int $propertyId = 1): self
     {
         $today ??= new DateTimeImmutable('today');
         $year = filter_var($input['year'] ?? null, FILTER_VALIDATE_INT, [
@@ -33,8 +34,14 @@ final class MarketingAnalyticsFilter
         return new self(
             $year === false ? (int) $today->format('Y') : $year,
             $month === false ? null : $month,
-            self::parseGuesthouses($input['guesthouses'] ?? $input['guesthouse'] ?? []),
+            $propertyId === 1 ? self::parseGuesthouses($input['guesthouses'] ?? $input['guesthouse'] ?? []) : [],
+            $propertyId,
         );
+    }
+
+    public function propertyId(): int
+    {
+        return $this->propertyId;
     }
 
     public function year(): int

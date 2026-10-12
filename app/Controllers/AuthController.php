@@ -2,7 +2,7 @@
 
 namespace App\Controllers;
 
-use App\Libraries\RoleAccess;
+use App\Libraries\PropertyContext;
 use App\Models\UserModel;
 
 class AuthController extends BaseController
@@ -10,7 +10,11 @@ class AuthController extends BaseController
     public function index()
     {
         if (session()->get('isLoggedIn')) {
-            return redirect()->to(site_url(RoleAccess::landingPath((string) session()->get('role'))));
+            if (PropertyContext::synchronize()) {
+                return redirect()->to(site_url(PropertyContext::landingPath()));
+            }
+
+            session()->destroy();
         }
 
         return view('pages/login');
@@ -33,16 +37,21 @@ class AuthController extends BaseController
             return redirect()->back()->withInput()->with('error', 'Username atau password tidak valid.');
         }
 
+        $assignments = PropertyContext::assignments((int) $user['id']);
+        if ($assignments === []) {
+            return redirect()->back()->with('error', 'Akun belum memiliki akses properti. Hubungi administrator.');
+        }
+
         session()->regenerate();
         session()->set([
             'isLoggedIn' => true,
             'userId'     => (int) $user['id'],
             'username'   => $user['username'],
             'fullName'   => $user['full_name'],
-            'role'       => $user['role'],
         ]);
+        PropertyContext::activate($assignments[0]);
 
-        return redirect()->to(site_url(RoleAccess::landingPath((string) $user['role'])))->with('success', 'Selamat datang, ' . esc($user['full_name']) . '.');
+        return redirect()->to(site_url(PropertyContext::landingPath()))->with('success', 'Selamat datang, ' . esc($user['full_name']) . '.');
     }
 
     public function logout()

@@ -2,6 +2,8 @@
 
 namespace App\Controllers;
 
+use App\Libraries\PropertyContext;
+
 class HousekeepingController extends BaseController
 {
     public function index(): string
@@ -23,9 +25,10 @@ class HousekeepingController extends BaseController
             ->select("cleaning_tasks.*, GROUP_CONCAT(users.full_name SEPARATOR ', ') AS assignees", false)
             ->join('task_assignees', 'task_assignees.task_id = cleaning_tasks.id', 'left')
             ->join('users', 'users.id = task_assignees.user_id', 'left')
+            ->where('cleaning_tasks.property_id', PropertyContext::activeId())
             ->groupBy('cleaning_tasks.id')->orderBy('scheduled_date', 'ASC')->get()->getResultArray();
 
-        $rooms = $db->table('rooms');
+        $rooms = $db->table('rooms')->where('property_id', PropertyContext::activeId());
         if ($guesthouse !== null) {
             $rooms->where('floor', $guesthouse);
         }
@@ -44,7 +47,7 @@ class HousekeepingController extends BaseController
             'guesthouse' => $guesthouse,
             'status' => $status,
             'tasks' => $tasks,
-            'users' => $db->table('users')->orderBy('full_name', 'ASC')->get()->getResultArray(),
+            'users' => $db->table('users')->select('users.*')->join('user_property_roles upr', 'upr.user_id = users.id')->where('upr.property_id', PropertyContext::activeId())->orderBy('users.full_name', 'ASC')->get()->getResultArray(),
         ]);
     }
 
@@ -55,7 +58,7 @@ class HousekeepingController extends BaseController
             return $this->feedback('danger', 'Status kamar tidak valid.');
         }
         $db = db_connect();
-        $room = $db->table('rooms')->where('id', $id)->get()->getRowArray();
+        $room = $db->table('rooms')->where('property_id', PropertyContext::activeId())->where('id', $id)->get()->getRowArray();
         if ($room === null) {
             return $this->feedback('danger', 'Kamar tidak ditemukan.');
         }
@@ -99,8 +102,13 @@ class HousekeepingController extends BaseController
             return $this->feedback('danger', implode(' ', $this->validator->getErrors()));
         }
         $db = db_connect();
+        $userId = (int) $this->request->getPost('user_id');
+        if ($userId > 0 && $db->table('user_property_roles')->where('user_id', $userId)->where('property_id', PropertyContext::activeId())->countAllResults() === 0) {
+            return $this->feedback('danger', 'Petugas tidak ditugaskan pada properti aktif.');
+        }
         $db->transStart();
         $db->table('cleaning_tasks')->insert([
+            'property_id' => PropertyContext::activeId(),
             'description' => trim((string) $this->request->getPost('description')),
             'room_area' => trim((string) $this->request->getPost('room_area')),
             'scheduled_date' => $this->request->getPost('scheduled_date'),
@@ -109,7 +117,6 @@ class HousekeepingController extends BaseController
             'created_at' => date('Y-m-d H:i:s'),
         ]);
         $taskId = (int) $db->insertID();
-        $userId = (int) $this->request->getPost('user_id');
         if ($userId > 0) $db->table('task_assignees')->insert(['task_id' => $taskId, 'user_id' => $userId]);
         $db->transComplete();
         return $this->feedback('success', 'Cleaning task berhasil dibuat.');
@@ -121,14 +128,14 @@ class HousekeepingController extends BaseController
         if (! in_array($status, ['Pending', 'In_Progress', 'Completed'], true)) {
             return $this->feedback('danger', 'Status task tidak valid.');
         }
-        db_connect()->table('cleaning_tasks')->where('id', $id)->update(['status' => $status, 'updated_at' => date('Y-m-d H:i:s')]);
+        db_connect()->table('cleaning_tasks')->where('property_id', PropertyContext::activeId())->where('id', $id)->update(['status' => $status, 'updated_at' => date('Y-m-d H:i:s')]);
         return $this->feedback('success', 'Status cleaning task diperbarui.');
     }
 
     public function deleteTask(int $id)
     {
         $db = db_connect();
-        $task = $db->table('cleaning_tasks')->select('id')->where('id', $id)->get()->getRowArray();
+        $task = $db->table('cleaning_tasks')->select('id')->where('property_id', PropertyContext::activeId())->where('id', $id)->get()->getRowArray();
         if ($task === null) {
             return $this->feedback('danger', 'Cleaning task tidak ditemukan.');
         }
@@ -147,6 +154,7 @@ class HousekeepingController extends BaseController
 
     private function validGuesthouse(string $guesthouse): ?int
     {
+        if (PropertyContext::activeId() !== PropertyContext::HOMIQ_ID) return null;
         return preg_match('/^[1-5]$/', $guesthouse) === 1 ? (int) $guesthouse : null;
     }
 

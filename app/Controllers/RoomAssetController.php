@@ -2,6 +2,8 @@
 
 namespace App\Controllers;
 
+use App\Libraries\PropertyContext;
+
 class RoomAssetController extends BaseController
 {
     private const CONDITIONS = ['Good', 'Attention', 'Broken', 'Retired'];
@@ -29,7 +31,7 @@ class RoomAssetController extends BaseController
         }
 
         $db = db_connect();
-        $asset = $db->table('room_assets')->where('id', $id)->get()->getRowArray();
+        $asset = $db->table('room_assets')->select('room_assets.*')->join('rooms', 'rooms.id = room_assets.room_id')->where('rooms.property_id', PropertyContext::activeId())->where('room_assets.id', $id)->get()->getRowArray();
         if ($asset === null) {
             return $this->feedback('danger', 'Aset kamar tidak ditemukan.');
         }
@@ -85,7 +87,7 @@ class RoomAssetController extends BaseController
     private function referenceError(bool $requireActiveCategory): ?string
     {
         $db = db_connect();
-        if ($db->table('rooms')->where('id', (int) $this->request->getPost('room_id'))->countAllResults() === 0) {
+        if ($db->table('rooms')->where('property_id', PropertyContext::activeId())->where('id', (int) $this->request->getPost('room_id'))->countAllResults() === 0) {
             return 'Kamar tidak ditemukan.';
         }
 

@@ -16,6 +16,7 @@ use App\Filters\AuthFilter;
 use App\Filters\AccessFilter;
 use App\Filters\RoleFilter;
 use App\Filters\LastDataUpdateFilter;
+use App\Filters\PropertyReadyFilter;
 
 class Filters extends BaseFilters
 {
@@ -42,6 +43,8 @@ class Filters extends BaseFilters
         'access'        => AccessFilter::class,
         'role'          => RoleFilter::class,
         'lastDataUpdate' => LastDataUpdateFilter::class,
+        'propertyReady' => PropertyReadyFilter::class,
+        'companyFinance' => \App\Filters\CompanyFinanceFilter::class,
     ];
 
     /**

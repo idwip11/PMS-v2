@@ -2,13 +2,35 @@
 use App\Libraries\RoleAccess;
 
 $maskFinancials = RoleAccess::masksDashboardFinancials((string) session('role'));
+$pricingMode = \App\Libraries\PropertyPricing::active()['pricing_mode'];
+$isMonthly = $pricingMode === 'room_monthly';
+$isHomestay = $pricingMode === 'whole_home_nightly'
+    || \App\Libraries\PropertyContext::activeId() === 2
+    || (string) session('activePropertyCode') === 'HOMESTAY_MITRA';
 ?>
-<div class="dashboard-stat-grid mb-4">
+<div class="dashboard-stat-grid <?= $isMonthly ? 'dashboard-stat-grid-monthly' : '' ?> mb-4">
     <div class="card stat-card border-0 shadow-sm"><div class="card-body"><small class="text-secondary">Occupancy</small><div class="display-6 fw-semibold"><?= number_format($stats['occupancy'], 1) ?>%</div><div class="progress mt-2" style="height:6px"><div class="progress-bar" style="width:<?= min(100, $stats['occupancy']) ?>%"></div></div></div></div>
     <div class="card stat-card border-0 shadow-sm"><div class="card-body"><small class="text-secondary">Revenue</small><div class="fs-4 fw-semibold mt-2 text-nowrap"><?= $maskFinancials ? 'Rp***.***' : 'Rp' . number_format($stats['revenue'], 0, ',', '.') ?></div><span class="text-success small">Paid payments</span></div></div>
     <div class="card stat-card border-0 shadow-sm"><div class="card-body"><small class="text-secondary">Net Profit</small><div class="fs-4 fw-semibold mt-2 text-nowrap <?= $stats['netProfit'] < 0 && ! $maskFinancials ? 'text-danger' : 'text-success' ?>"><?= $maskFinancials ? 'Rp***.***' : 'Rp' . number_format($stats['netProfit'], 0, ',', '.') ?></div><span class="text-secondary small">Expense Rp<?= number_format($stats['expenses'], 0, ',', '.') ?></span></div></div>
-    <div class="card stat-card border-0 shadow-sm"><div class="card-body"><small class="text-secondary">Average Stay</small><div class="display-6 fw-semibold"><?= number_format($stats['averageStay'], 1) ?></div><span class="text-secondary small">malam / reservasi</span></div></div>
-    <div class="card stat-card border-0 shadow-sm dashboard-rented-card"><div class="card-body"><small>Rooms Rented</small><div class="display-6 fw-semibold"><?= (int) $stats['roomsRented'] ?></div><span class="small">kamar-malam pada bulan terpilih</span></div></div>
+    <div class="card stat-card border-0 shadow-sm"><div class="card-body"><small class="text-secondary"><?= $isMonthly ? 'Average Duration' : 'Average Stay' ?></small><div class="display-6 fw-semibold"><?= number_format($stats['averageStay'], 1) ?></div><span class="text-secondary small"><?= $isMonthly ? 'hari / durasi sewa' : 'malam / reservasi' ?></span></div></div>
+    <?php if ($isMonthly): ?>
+        <div class="card stat-card border-0 shadow-sm dashboard-rented-card">
+            <div class="card-body">
+                <small>Total Tenants</small>
+                <div class="display-6 fw-semibold"><?= (int) ($stats['totalTenants'] ?? 0) ?></div>
+                <span class="small">penghuni kos aktif</span>
+            </div>
+        </div>
+        <div class="card stat-card border-0 shadow-sm">
+            <div class="card-body">
+                <small class="text-secondary">Available Rooms</small>
+                <div class="display-6 fw-semibold text-success"><?= (int) ($stats['availableRooms'] ?? 0) ?></div>
+                <span class="text-secondary small">kamar kos tersedia</span>
+            </div>
+        </div>
+    <?php else: ?>
+        <div class="card stat-card border-0 shadow-sm dashboard-rented-card"><div class="card-body"><small><?= $isHomestay ? 'Houses Rented' : 'Rooms Rented' ?></small><div class="display-6 fw-semibold"><?= (int) $stats['roomsRented'] ?></div><span class="small"><?= $isHomestay ? 'malam sewa rumah pada bulan terpilih' : 'kamar-malam pada bulan terpilih' ?></span></div></div>
+    <?php endif; ?>
 </div>
 
 <?php if ($breakfastAlerts !== []): ?>
@@ -17,7 +39,7 @@ $maskFinancials = RoleAccess::masksDashboardFinancials((string) session('role'))
             <div class="d-flex align-items-center gap-2 text-nowrap"><strong class="small">Notif Pesanan Sarapan</strong><span class="badge text-bg-warning"><?= count($breakfastAlerts) ?></span></div>
             <div class="d-flex flex-wrap gap-2">
                 <?php foreach ($breakfastAlerts as $alert): ?>
-                    <button class="btn btn-sm dashboard-breakfast-item" type="button" hx-get="<?= site_url('reservations/' . $alert['id']) ?>" hx-target="#modal-container" hx-swap="innerHTML"><?= esc($alert['guest_name']) ?> · Room <?= esc($alert['room_number']) ?> · <?= ($alert['status'] ?? '') === 'Checked_In' ? 'Sedang menginap' : 'CI ' . esc(date('d/m/Y', strtotime($alert['check_in_date']))) ?></button>
+                    <button class="btn btn-sm dashboard-breakfast-item" type="button" hx-get="<?= site_url('reservations/' . $alert['id']) ?>" hx-target="#modal-container" hx-swap="innerHTML"><?= esc($alert['guest_name']) ?> · Room <?= esc($alert['room_number']) ?> · <?= ($alert['status'] ?? '') === 'Checked_In' ? ($isMonthly ? 'Sedang sewa' : 'Sedang menginap') : ($isMonthly ? 'Masuk ' : 'CI ') . esc(date('d/m/Y', strtotime($alert['check_in_date']))) ?></button>
                 <?php endforeach; ?>
             </div>
         </div>
@@ -37,14 +59,23 @@ $maskFinancials = RoleAccess::masksDashboardFinancials((string) session('role'))
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
-                    <div><h3 class="h6 mb-1">Today's Activity</h3><small class="text-secondary"><?= esc(date('d/m/Y', strtotime($today))) ?> WIB</small></div>
+                    <?php if ($isMonthly): ?>
+                        <div><h3 class="h6 mb-1">Jatuh Tempo Sewa</h3><small class="text-secondary"><?= esc(date('d/m/Y', strtotime($today))) ?> WIB</small></div>
+                    <?php else: ?>
+                        <div><h3 class="h6 mb-1">Today's Activity</h3><small class="text-secondary"><?= esc(date('d/m/Y', strtotime($today))) ?> WIB</small></div>
+                    <?php endif; ?>
                 </div>
                 <div class="row g-2 mb-3">
                     <?php $activitySuffix = $guesthouse !== null ? '?guesthouse=' . (int) $guesthouse : ''; ?>
-                    <div class="col-6"><button class="dashboard-activity-count dashboard-checkin-count w-100" type="button" hx-get="<?= site_url('dashboard/activity/check-in') . $activitySuffix ?>" hx-target="#modal-container" hx-swap="innerHTML"><strong><?= (int) $activities['checkInCount'] ?></strong><span>Check-ins</span></button></div>
-                    <div class="col-6"><button class="dashboard-activity-count dashboard-checkout-count w-100" type="button" hx-get="<?= site_url('dashboard/activity/check-out') . $activitySuffix ?>" hx-target="#modal-container" hx-swap="innerHTML"><strong><?= (int) $activities['checkOutCount'] ?></strong><span>Check-outs</span></button></div>
+                    <?php if ($isMonthly): ?>
+                        <div class="col-6"><button class="dashboard-activity-count dashboard-expiring-h7-count w-100" type="button" hx-get="<?= site_url('dashboard/activity/lease-h7') . $activitySuffix ?>" hx-target="#modal-container" hx-swap="innerHTML"><strong><?= (int) ($activities['expiringH7Count'] ?? 0) ?></strong><span>H-7 Segera</span></button></div>
+                        <div class="col-6"><button class="dashboard-activity-count dashboard-expiring-month-count w-100" type="button" hx-get="<?= site_url('dashboard/activity/lease-month') . $activitySuffix ?>" hx-target="#modal-container" hx-swap="innerHTML"><strong><?= (int) ($activities['expiringMonthCount'] ?? 0) ?></strong><span>Bulan Ini</span></button></div>
+                    <?php else: ?>
+                        <div class="col-6"><button class="dashboard-activity-count dashboard-checkin-count w-100" type="button" hx-get="<?= site_url('dashboard/activity/check-in') . $activitySuffix ?>" hx-target="#modal-container" hx-swap="innerHTML"><strong><?= (int) $activities['checkInCount'] ?></strong><span>Check-ins</span></button></div>
+                        <div class="col-6"><button class="dashboard-activity-count dashboard-checkout-count w-100" type="button" hx-get="<?= site_url('dashboard/activity/check-out') . $activitySuffix ?>" hx-target="#modal-container" hx-swap="innerHTML"><strong><?= (int) $activities['checkOutCount'] ?></strong><span>Check-outs</span></button></div>
+                    <?php endif; ?>
                 </div>
-                <p class="small text-secondary text-center mb-0">Klik jumlah untuk melihat daftar lengkap.</p>
+                <p class="small text-secondary text-center mb-0"><?= $isMonthly ? 'Klik jumlah untuk melihat daftar penyewa.' : 'Klik jumlah untuk melihat daftar lengkap.' ?></p>
             </div>
         </div>
         <div class="card border-0 shadow-sm">
@@ -59,6 +90,7 @@ $maskFinancials = RoleAccess::masksDashboardFinancials((string) session('role'))
         </div>
     </div>
 </div>
+<?php if (! $isMonthly): ?>
 <div class="card border-0 shadow-sm mt-4 dashboard-service-alert-card">
     <div class="card-body p-4">
         <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
@@ -73,15 +105,15 @@ $maskFinancials = RoleAccess::masksDashboardFinancials((string) session('role'))
         <?php else: ?>
             <div class="table-responsive">
                 <table class="table align-middle mb-0 dashboard-service-alert-table">
-                    <thead><tr><th>Layanan</th><th>Tamu</th><th>Kamar</th><th>Jadwal</th><th>Status</th></tr></thead>
+                    <thead><tr><th>Layanan</th><th>Tamu</th><th><?= $isHomestay ? 'Homestay' : 'Kamar' ?></th><th>Jadwal</th><th>Status</th></tr></thead>
                     <tbody>
                         <?php foreach ($serviceAlerts as $alert): ?>
                             <?php $isEarlyCheckIn = $alert['type'] === 'early_checkin'; ?>
                             <tr class="dashboard-service-alert-row <?= $isEarlyCheckIn ? 'is-early-checkin' : 'is-late-checkout' ?>" role="button" hx-get="<?= site_url('reservations/' . $alert['id']) ?>" hx-target="#modal-container" hx-swap="innerHTML">
                                 <td><span class="badge <?= $isEarlyCheckIn ? 'text-bg-primary' : 'text-bg-warning' ?>"><?= $isEarlyCheckIn ? 'Early Check In' : 'Late Checkout' ?></span></td>
                                 <td class="fw-semibold"><?= esc($alert['guest_name']) ?></td>
-                                <td>Room <?= esc($alert['room_number']) ?></td>
-                                <td class="text-nowrap"><?= $isEarlyCheckIn ? 'Check-in ' . esc(date('d/m/Y', strtotime($alert['check_in_date']))) : 'Check-out hari ini' ?></td>
+                                <td><?= $isHomestay ? 'Mitra' : 'Room ' . esc($alert['room_number']) ?></td>
+                                <td class="text-nowrap"><?= $isEarlyCheckIn ? ($isMonthly ? 'Masuk ' : 'Check-in ') . esc(date('d/m/Y', strtotime($alert['check_in_date']))) : ($isMonthly ? 'Keluar hari ini' : 'Check-out hari ini') ?></td>
                                 <td><?= esc(str_replace('_', ' ', $alert['status'])) ?></td>
                             </tr>
                         <?php endforeach; ?>
@@ -91,6 +123,7 @@ $maskFinancials = RoleAccess::masksDashboardFinancials((string) session('role'))
         <?php endif; ?>
     </div>
 </div>
+<?php endif; ?>
 <div class="card border-0 shadow-sm mt-4 dashboard-cleaning-card">
     <div class="card-body p-4">
         <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
@@ -139,7 +172,7 @@ $maskFinancials = RoleAccess::masksDashboardFinancials((string) session('role'))
         <?php else: ?>
             <div class="table-responsive">
                 <table class="table dashboard-recent-table align-middle mb-0">
-                    <thead><tr><th>Nama Tamu</th><th>ID Booking</th><th>Kamar</th><th>Sumber</th><th>Check-in</th><th>Status</th></tr></thead>
+                    <thead><tr><th><?= $isMonthly ? 'Nama Penyewa' : 'Nama Tamu' ?></th><th>ID Booking</th><th><?= $isHomestay ? 'Homestay' : 'Kamar' ?></th><th>Sumber</th><th><?= $isMonthly ? 'Tanggal Masuk' : 'Check-in' ?></th><th>Status</th></tr></thead>
                     <tbody>
                         <?php foreach ($recentReservations as $reservation): ?>
                             <?php
@@ -155,7 +188,7 @@ $maskFinancials = RoleAccess::masksDashboardFinancials((string) session('role'))
                             <tr class="dashboard-recent-row" role="button" hx-get="<?= site_url('reservations/' . $reservation['id']) ?>" hx-target="#modal-container" hx-swap="innerHTML">
                                 <td class="fw-semibold"><?= esc($reservation['guest_name']) ?></td>
                                 <td class="text-primary fw-semibold text-nowrap"><?= esc($reservation['order_id']) ?></td>
-                                <td><span class="dashboard-room-dot"></span><?= esc($reservation['room_number']) ?></td>
+                                <td><span class="dashboard-room-dot"></span><?= esc($isHomestay ? 'Mitra' : $reservation['room_number']) ?></td>
                                 <td><?= esc($reservation['source'] ?? '-') ?></td>
                                 <td class="text-nowrap"><?= esc(date('d/m/Y', strtotime($reservation['check_in_date']))) ?></td>
                                 <td><span class="badge <?= esc($statusClass) ?>"><?= esc(str_replace('_', ' ', $status)) ?></span></td>

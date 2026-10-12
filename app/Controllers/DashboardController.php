@@ -2,6 +2,9 @@
 
 namespace App\Controllers;
 
+use App\Libraries\PropertyContext;
+use App\Libraries\PropertyPricing;
+use App\Libraries\RoleAccess;
 use DateTimeImmutable;
 use DateTimeZone;
 
@@ -32,7 +35,8 @@ class DashboardController extends BaseController
         $next = $first->modify('first day of next month');
         $last = $next->modify('-1 day');
         $db = db_connect();
-        $roomBuilder = $db->table('rooms');
+        $propertyId = PropertyContext::activeId();
+        $roomBuilder = $db->table('rooms')->where('property_id', $propertyId);
         if ($guesthouse !== null) {
             $roomBuilder->where('floor', $guesthouse);
         }
@@ -41,8 +45,19 @@ class DashboardController extends BaseController
         $reservationBuilder = $db->table('reservations')
             ->select('reservations.*')
             ->join('rooms', 'rooms.id = reservations.room_id')
-            ->where('check_in_date <', $next->format('Y-m-d'))
-            ->where('check_out_date >', $first->format('Y-m-d'))
+            ->where('reservations.property_id', $propertyId)
+            ->where('rooms.property_id', $propertyId)
+            ->groupStart()
+                ->groupStart()
+                    ->where('reservations.check_in_date <', $next->format('Y-m-d'))
+                    ->where('reservations.check_out_date >', $first->format('Y-m-d'))
+                ->groupEnd()
+                ->orGroupStart()
+                    ->where('reservations.check_in_date = reservations.check_out_date', null, false)
+                    ->where('reservations.check_in_date >=', $first->format('Y-m-d'))
+                    ->where('reservations.check_in_date <', $next->format('Y-m-d'))
+                ->groupEnd()
+            ->groupEnd()
             ->whereIn('reservations.status', ['Confirmed', 'Checked_In', 'Checked_Out']);
         if ($guesthouse !== null) {
             $reservationBuilder->where('rooms.floor', $guesthouse);
@@ -51,18 +66,31 @@ class DashboardController extends BaseController
 
         $occupiedNights = 0;
         $stayNights = [];
+        $occupiedRoomIds = [];
+        $monthlyTenantGuestIds = [];
         foreach ($reservations as $reservation) {
-            $arrival = max($reservation['check_in_date'], $first->format('Y-m-d'));
-            $departure = min($reservation['check_out_date'], $next->format('Y-m-d'));
+            $checkInDate = (string) $reservation['check_in_date'];
+            $checkOutDate = (string) $reservation['check_out_date'];
+            $effectiveCheckOut = $checkOutDate > $checkInDate
+                ? $checkOutDate
+                : (new DateTimeImmutable($checkInDate))->modify('+1 day')->format('Y-m-d');
+            $arrival = max($checkInDate, $first->format('Y-m-d'));
+            $departure = min($effectiveCheckOut, $next->format('Y-m-d'));
             $nights = (int) (new DateTimeImmutable($arrival))->diff(new DateTimeImmutable($departure))->days;
             $occupiedNights += max(0, $nights);
-            $stayNights[] = (int) (new DateTimeImmutable($reservation['check_in_date']))->diff(new DateTimeImmutable($reservation['check_out_date']))->days;
+            $stayNights[] = max(1, (int) (new DateTimeImmutable($checkInDate))->diff(new DateTimeImmutable($effectiveCheckOut))->days);
+
+            if (in_array($reservation['status'], ['Confirmed', 'Checked_In'], true)) {
+                $occupiedRoomIds[(int) $reservation['room_id']] = true;
+                $monthlyTenantGuestIds[(int) $reservation['guest_id']] = true;
+            }
         }
 
         $days = (int) $first->format('t');
         $maintenanceBuilder = $db->table('maintenance_tickets')
             ->select('maintenance_tickets.room_id, maintenance_tickets.created_at, maintenance_tickets.completed_at')
             ->join('rooms', 'rooms.id = maintenance_tickets.room_id')
+            ->where('rooms.property_id', $propertyId)
             ->where('maintenance_tickets.blocks_room', 1)
             ->where('maintenance_tickets.created_at <', $next->format('Y-m-d'));
         if ($guesthouse !== null) {
@@ -82,10 +110,17 @@ class DashboardController extends BaseController
         }
         $availableRoomNights = max(0, ($roomCount * $days) - count($blockedRoomNights));
 
+        $blockedRoomIds = array_unique(array_map('intval', array_column($maintenanceTicketsForOccupancy, 'room_id')));
+        $unavailableRoomIds = array_unique(array_merge(array_keys($occupiedRoomIds), $blockedRoomIds));
+        $totalTenants = count($monthlyTenantGuestIds);
+        $availableRooms = max(0, $roomCount - count($unavailableRoomIds));
+
         $paymentBuilder = $db->table('payments')
             ->select('payments.*')
             ->join('reservations', 'reservations.id = payments.reservation_id')
             ->join('rooms', 'rooms.id = reservations.room_id')
+            ->where('reservations.property_id', $propertyId)
+            ->where('rooms.property_id', $propertyId)
             ->where('payments.status', 'Paid')
             ->where('payments.payment_date >=', $first->format('Y-m-d'))
             ->where('payments.payment_date <=', $last->format('Y-m-d'));
@@ -95,6 +130,7 @@ class DashboardController extends BaseController
         $payments = $paymentBuilder->get()->getResultArray();
 
         $expenseBuilder = $db->table('expenses')
+            ->where('expenses.property_id', $propertyId)
             ->where('status !=', 'Rejected')
             ->where('date_incurred >=', $first->format('Y-m-d'))
             ->where('date_incurred <=', $last->format('Y-m-d'));
@@ -120,6 +156,7 @@ class DashboardController extends BaseController
             ->select('reservations.id, reservations.order_id, reservations.source, reservations.status, reservations.check_in_date, guests.full_name AS guest_name, rooms.room_number', false)
             ->join('guests', 'guests.id = reservations.guest_id')
             ->join('rooms', 'rooms.id = reservations.room_id');
+        $recentBuilder->where('reservations.property_id', $propertyId)->where('rooms.property_id', $propertyId);
         if ($guesthouse !== null) {
             $recentBuilder->where('rooms.floor', $guesthouse);
         }
@@ -127,9 +164,10 @@ class DashboardController extends BaseController
             ->limit(5)
             ->get()->getResultArray();
 
-        $dirtyRoomBuilder = $db->table('rooms')->where('status', 'Dirty');
+        $dirtyRoomBuilder = $db->table('rooms')->where('property_id', $propertyId)->where('status', 'Dirty');
         $maintenanceBuilder = $db->table('maintenance_tickets')
             ->join('rooms', 'rooms.id = maintenance_tickets.room_id')
+            ->where('rooms.property_id', $propertyId)
             ->whereIn('maintenance_tickets.status', ['Open', 'In_Progress']);
         if ($guesthouse !== null) {
             $dirtyRoomBuilder->where('floor', $guesthouse);
@@ -140,18 +178,21 @@ class DashboardController extends BaseController
             ->select('cleaning_tasks.id, cleaning_tasks.room_area, cleaning_tasks.description, cleaning_tasks.priority, cleaning_tasks.status, GROUP_CONCAT(users.full_name SEPARATOR ", ") AS assignees', false)
             ->join('task_assignees', 'task_assignees.task_id = cleaning_tasks.id', 'left')
             ->join('users', 'users.id = task_assignees.user_id', 'left')
+            ->where('cleaning_tasks.property_id', $propertyId)
             ->where('cleaning_tasks.scheduled_date', $today)
             ->groupBy('cleaning_tasks.id')
             ->orderBy('cleaning_tasks.priority', 'DESC')
             ->get()->getResultArray();
 
         $tomorrow = (new DateTimeImmutable($today))->modify('+1 day')->format('Y-m-d');
-        $serviceAlertBuilder = static function (string $serviceName, string $dateColumn, string $date, string $type, bool $includeActiveStay = false) use ($db, $guesthouse, $today) {
+        $serviceAlertBuilder = static function (string $serviceName, string $dateColumn, string $date, string $type, bool $includeActiveStay = false) use ($db, $guesthouse, $today, $propertyId) {
             $builder = $db->table('reservations')
                 ->select('reservations.id, reservations.order_id, reservations.booking_group_id, reservations.status, reservations.check_in_date, reservations.check_out_date, guests.full_name AS guest_name, rooms.room_number', false)
                 ->join('invoice_items', 'invoice_items.reservation_id = reservations.id')
                 ->join('guests', 'guests.id = reservations.guest_id')
                 ->join('rooms', 'rooms.id = reservations.room_id')
+                ->where('reservations.property_id', $propertyId)
+                ->where('rooms.property_id', $propertyId)
                 ->where('invoice_items.item_name', $serviceName);
             if ($includeActiveStay) {
                 $builder->groupStart()
@@ -178,7 +219,8 @@ class DashboardController extends BaseController
                 return $alert;
             }, $builder->distinct()->orderBy('rooms.room_number', 'ASC')->get()->getResultArray());
         };
-        $serviceAlerts = array_merge(
+        $isMonthly = PropertyPricing::active()['pricing_mode'] === 'room_monthly';
+        $serviceAlerts = $isMonthly ? [] : array_merge(
             $serviceAlertBuilder('Early Check In', 'check_in_date', $tomorrow, 'early_checkin', true),
             $serviceAlertBuilder('Late Checkout', 'check_out_date', $today, 'late_checkout')
         );
@@ -189,6 +231,8 @@ class DashboardController extends BaseController
             ->select('reservations.id, reservations.status, reservations.check_in_date, guests.full_name AS guest_name, rooms.room_number', false)
             ->join('guests', 'guests.id = reservations.guest_id')
             ->join('rooms', 'rooms.id = reservations.room_id')
+            ->where('reservations.property_id', $propertyId)
+            ->where('rooms.property_id', $propertyId)
             ->where('reservations.has_breakfast', 1)
             ->groupStart()
                 ->groupStart()
@@ -222,15 +266,19 @@ class DashboardController extends BaseController
                 'netProfit' => $revenue - $expenseTotal,
                 'averageStay' => $stayNights === [] ? 0 : array_sum($stayNights) / count($stayNights),
                 'roomsRented' => $occupiedNights,
+                'totalTenants' => $totalTenants,
+                'availableRooms' => $availableRooms,
                 'dirtyRooms' => $dirtyRoomBuilder->countAllResults(),
                 'openMaintenance' => $maintenanceBuilder->countAllResults(),
-                'lowStock' => $db->table('inventory_items')->where('current_stock <= min_threshold', null, false)->countAllResults(),
+                'lowStock' => $db->table('inventory_items')->where('property_id', $propertyId)->where('current_stock <= min_threshold', null, false)->countAllResults(),
             ],
             'chart' => ['labels' => $labels, 'revenue' => $dailyRevenue, 'expenses' => $dailyExpenses],
             'today' => $today,
             'activities' => [
                 'checkInCount' => count($checkIns),
                 'checkOutCount' => count($checkOuts),
+                'expiringH7Count' => count($activityData['expiringH7'] ?? []),
+                'expiringMonthCount' => count($activityData['expiringMonth'] ?? []),
             ],
             'recentReservations' => $recentReservations,
             'todayCleaningTasks' => $todayCleaningTasks,
@@ -242,11 +290,13 @@ class DashboardController extends BaseController
     public function exportRecentReservations()
     {
         $guesthouse = $this->guesthouse();
+        $propertyId = PropertyContext::activeId();
         $db = db_connect();
         $builder = $db->table('reservations')
-            ->select('reservations.id, reservations.order_id, reservations.source, reservations.status, reservations.check_in_date, reservations.check_out_date, reservations.total_amount, reservations.breakfast_cost, reservations.laundry_cost, reservations.massage_cost, guests.full_name AS guest_name, rooms.room_number, rooms.floor AS guesthouse', false)
+            ->select('reservations.id, reservations.order_id, reservations.source, reservations.important_note, reservations.status, reservations.check_in_date, reservations.check_out_date, reservations.total_amount, reservations.breakfast_cost, reservations.laundry_cost, reservations.massage_cost, guests.full_name AS guest_name, rooms.room_number, rooms.floor AS guesthouse', false)
             ->join('guests', 'guests.id = reservations.guest_id')
             ->join('rooms', 'rooms.id = reservations.room_id');
+        $builder->where('reservations.property_id', $propertyId)->where('rooms.property_id', $propertyId);
         if ($guesthouse !== null) {
             $builder->where('rooms.floor', $guesthouse);
         }
@@ -275,10 +325,16 @@ class DashboardController extends BaseController
             'No_Show' => 'No-Show',
         ];
         $serviceItemNames = ['Breakfast', 'Extra Bed', 'Biaya Extra Bed', 'Laundry', 'Massage', 'Sewa Kendaraan'];
+        $showFinancials = ! RoleAccess::masksDashboardFinancials((string) session('role'));
         $stringCell = static fn ($value, string $style = ''): string => '<Cell' . ($style === '' ? '' : ' ss:StyleID="' . $style . '"') . '><Data ss:Type="String">' . htmlspecialchars((string) $value, ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>';
         $numberCell = static fn ($value): string => '<Cell ss:StyleID="Currency"><Data ss:Type="Number">' . (float) $value . '</Data></Cell>';
+        $pricingMode = PropertyPricing::active()['pricing_mode'];
+        $isHomestay = $pricingMode === 'whole_home_nightly'
+            || $propertyId === 2
+            || (string) session('activePropertyCode') === 'HOMESTAY_MITRA';
+        $roomColumnHeader = $isHomestay ? 'Homestay' : 'Kamar';
         $rows = [
-            '<Row>' . implode('', array_map(static fn ($heading) => $stringCell($heading, 'Header'), ['Nama Tamu', 'ID Booking', 'Kamar', 'GH', 'Sumber', 'Tanggal Check-in', 'Tanggal Check-out', 'Status', 'Biaya Menginap', 'Biaya Layanan'])) . '</Row>',
+            '<Row>' . implode('', array_map(static fn ($heading) => $stringCell($heading, 'Header'), ['Nama Tamu', 'ID Booking', $roomColumnHeader, 'GH', 'Sumber', 'Catatan', 'Tanggal Check-in', 'Tanggal Check-out', 'Status', 'Biaya Menginap', 'Biaya Layanan'])) . '</Row>',
         ];
 
         foreach ($reservations as $reservation) {
@@ -301,14 +357,15 @@ class DashboardController extends BaseController
             $rows[] = '<Row>'
                 . $stringCell($reservation['guest_name'])
                 . $stringCell($reservation['order_id'])
-                . $stringCell($reservation['room_number'])
-                . $stringCell('GH ' . $reservation['guesthouse'])
+                . $stringCell($isHomestay ? 'Mitra' : $reservation['room_number'])
+                . $stringCell($propertyId === PropertyContext::HOMIQ_ID ? 'GH ' . $reservation['guesthouse'] : (string) session('activePropertyName'))
                 . $stringCell($reservation['source'] ?: 'Direct')
+                . $stringCell($reservation['important_note'] ?: '')
                 . $stringCell($reservation['check_in_date'])
                 . $stringCell($reservation['check_out_date'])
                 . $stringCell($statusLabels[$reservation['status']] ?? $reservation['status'])
-                . $numberCell($stayCost)
-                . $numberCell($serviceCost)
+                . ($showFinancials ? $numberCell($stayCost) : $stringCell('—'))
+                . ($showFinancials ? $numberCell($serviceCost) : $stringCell('—'))
                 . '</Row>';
         }
 
@@ -317,28 +374,35 @@ class DashboardController extends BaseController
             . '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">'
             . '<Styles><Style ss:ID="Header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#2563EB" ss:Pattern="Solid"/></Style><Style ss:ID="Currency"><NumberFormat ss:Format="#,##0"/></Style></Styles>'
             . '<Worksheet ss:Name="Recent Reservations"><Table>'
-            . '<Column ss:Width="150"/><Column ss:Width="140"/><Column ss:Width="70"/><Column ss:Width="50"/><Column ss:Width="110"/><Column ss:Width="100"/><Column ss:Width="100"/><Column ss:Width="100"/><Column ss:Width="110"/><Column ss:Width="110"/>'
+            . '<Column ss:Width="150"/><Column ss:Width="140"/><Column ss:Width="70"/><Column ss:Width="50"/><Column ss:Width="110"/><Column ss:Width="240"/><Column ss:Width="100"/><Column ss:Width="100"/><Column ss:Width="100"/><Column ss:Width="110"/><Column ss:Width="110"/>'
             . implode('', $rows)
             . '</Table></Worksheet></Workbook>';
 
         return $this->response
             ->setHeader('Content-Type', 'application/vnd.ms-excel; charset=UTF-8')
-            ->download('homiq-recent-reservations.xls', $content);
+            ->download(preg_replace('/[^a-z0-9-]+/', '-', strtolower((string) session('activePropertyCode'))) . '-recent-reservations.xls', $content);
     }
 
     public function activity(string $type)
     {
-        if (! in_array($type, ['check-in', 'check-out'], true)) {
+        if (! in_array($type, ['check-in', 'check-out', 'lease-h7', 'lease-month'], true)) {
             return $this->response->setStatusCode(404)->setBody('Aktivitas tidak ditemukan.');
         }
 
         $guesthouse = $this->guesthouse();
         $activityData = $this->todayActivities($guesthouse);
 
+        $items = match ($type) {
+            'check-in' => $activityData['checkIns'],
+            'check-out' => $activityData['checkOuts'],
+            'lease-h7' => $activityData['expiringH7'] ?? [],
+            'lease-month' => $activityData['expiringMonth'] ?? [],
+        };
+
         return view('components/modals/dashboard_activity', [
             'type' => $type,
             'today' => $activityData['today'],
-            'items' => $type === 'check-in' ? $activityData['checkIns'] : $activityData['checkOuts'],
+            'items' => $items,
         ]);
     }
 
@@ -356,11 +420,14 @@ class DashboardController extends BaseController
             ->where('status', 'Paid')
             ->groupBy('reservation_id')
             ->getCompiledSelect();
-        $activityBuilder = static function () use ($db, $paymentTotals, $guesthouse) {
+        $propertyId = PropertyContext::activeId();
+        $activityBuilder = static function () use ($db, $paymentTotals, $guesthouse, $propertyId) {
             $builder = $db->table('reservations')
-            ->select('reservations.id, reservations.order_id, reservations.booking_group_id, reservations.source, reservations.status, reservations.total_amount, guests.full_name AS guest_name, rooms.room_number, COALESCE(paid.paid_amount, 0) AS paid_amount', false)
+            ->select('reservations.id, reservations.order_id, reservations.booking_group_id, reservations.source, reservations.status, reservations.check_in_date, reservations.check_out_date, reservations.total_amount, guests.full_name AS guest_name, rooms.room_number, COALESCE(paid.paid_amount, 0) AS paid_amount', false)
             ->join('guests', 'guests.id = reservations.guest_id')
             ->join('rooms', 'rooms.id = reservations.room_id')
+            ->where('reservations.property_id', $propertyId)
+            ->where('rooms.property_id', $propertyId)
             ->join("({$paymentTotals}) paid", 'paid.reservation_id = reservations.id', 'left', false);
             if ($guesthouse !== null) {
                 $builder->where('rooms.floor', $guesthouse);
@@ -384,10 +451,31 @@ class DashboardController extends BaseController
             ->orderBy('rooms.room_number', 'ASC')
             ->get()->getResultArray();
 
+        $todayDt = new DateTimeImmutable($today);
+        $in7 = $todayDt->modify('+7 days')->format('Y-m-d');
+        $monthStart = $todayDt->modify('first day of this month')->format('Y-m-d');
+        $monthEnd = $todayDt->modify('last day of this month')->format('Y-m-d');
+
+        $expiringH7 = $activityBuilder()
+            ->whereIn('reservations.status', ['Confirmed', 'Checked_In'])
+            ->where('reservations.check_out_date >=', $today)
+            ->where('reservations.check_out_date <=', $in7)
+            ->orderBy('reservations.check_out_date', 'ASC')
+            ->get()->getResultArray();
+
+        $expiringMonth = $activityBuilder()
+            ->whereIn('reservations.status', ['Confirmed', 'Checked_In'])
+            ->where('reservations.check_out_date >=', $monthStart)
+            ->where('reservations.check_out_date <=', $monthEnd)
+            ->orderBy('reservations.check_out_date', 'ASC')
+            ->get()->getResultArray();
+
         return [
             'today' => $today,
             'checkIns' => $this->groupActivityItems(array_map(static fn ($item) => $decorate($item, 'check-in'), $checkIns)),
             'checkOuts' => $this->groupActivityItems(array_map(static fn ($item) => $decorate($item, 'check-out'), $checkOuts)),
+            'expiringH7' => $this->groupActivityItems(array_map(static fn ($item) => $decorate($item, 'lease-h7'), $expiringH7)),
+            'expiringMonth' => $this->groupActivityItems(array_map(static fn ($item) => $decorate($item, 'lease-month'), $expiringMonth)),
         ];
     }
 
@@ -415,10 +503,15 @@ class DashboardController extends BaseController
             $groups[$key]['paid_amount'] += (float) $item['paid_amount'];
         }
 
+        $pricingMode = PropertyPricing::active()['pricing_mode'];
+        $isHomestay = $pricingMode === 'whole_home_nightly'
+            || PropertyContext::activeId() === 2
+            || (string) session('activePropertyCode') === 'HOMESTAY_MITRA';
+
         foreach ($groups as &$group) {
             $group['room_numbers'] = array_values(array_unique($group['room_numbers']));
             usort($group['room_numbers'], static fn (string $left, string $right): int => strnatcasecmp($left, $right));
-            $group['room_label'] = implode(', ', array_map(static fn (string $room): string => 'Kamar ' . $room, $group['room_numbers']));
+            $group['room_label'] = $isHomestay ? 'Homestay Mitra' : implode(', ', array_map(static fn (string $room): string => 'Kamar ' . $room, $group['room_numbers']));
             $group['room_number'] = $group['room_numbers'][0] ?? '';
             $group['room_count'] = count($group['room_numbers']);
             $group['outstanding'] = max(0, (float) $group['total_amount'] - (float) $group['paid_amount']);
@@ -436,6 +529,9 @@ class DashboardController extends BaseController
 
     private function guesthouse(): ?int
     {
+        if (PropertyContext::activeId() !== PropertyContext::HOMIQ_ID) {
+            return null;
+        }
         $guesthouse = (string) $this->request->getGet('guesthouse');
         return preg_match('/^[1-5]$/', $guesthouse) === 1 ? (int) $guesthouse : null;
     }

@@ -1,0 +1,31 @@
+{
+    "checks": 9,
+    "bridge": {
+        "total_confirmed_gross": "1300.00",
+        "total_confirmed_net": "1250.00",
+        "total_owner_share": "399.96",
+        "total_company_fee": "800.04",
+        "total_direct_services": "100.00",
+        "total_company_entitlement": "900.04",
+        "total_unit_paid_expenses": "0.00",
+        "holding_overhead_paid": "0.00",
+        "holding_overhead_incurred": "0.00",
+        "company_net_result": "900.04",
+        "basis_label": "Ringkasan Berbasis Kas (CF-3)"
+    },
+    "cards": {
+        "current_cash_total": "1250.00",
+        "month_end_cash_total": "1250.00",
+        "estimated_free_cash": "1250.00",
+        "total_reserves": "0.00",
+        "reserves_detail": {
+            "owner_payable": "0.00",
+            "refund_deposit": "0.00",
+            "other": "0.00"
+        },
+        "cash_in_month": "1250.00",
+        "cash_out_month": "0.00",
+        "net_cash_flow": "1250.00",
+        "company_net_result": "900.04"
+    }
+}

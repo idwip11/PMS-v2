@@ -1,0 +1,23 @@
+{
+    "month": "2026-10",
+    "source_totals": {
+        "2": {
+            "revenue": 0,
+            "expenses": 0
+        },
+        "3": {
+            "revenue": 0,
+            "expenses": 0
+        }
+    },
+    "combined": {
+        "revenue": 0,
+        "expenses": 0,
+        "netProfit": 0,
+        "outstanding": 0
+    },
+    "shared_setup_rows": 0,
+    "unchanged_tables": 55,
+    "source_reconciles": true,
+    "dropdown_reports_identical": true
+}

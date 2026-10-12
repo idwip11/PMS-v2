@@ -84,6 +84,11 @@ if (! function_exists('marketing_room_nights_in_period')) {
         }
 
         $start = max($stayStart, $scopeStart);
+        // Transit reservations use the same date for check-in and check-out,
+        // but occupy the room for one operational night.
+        if ($stayEnd <= $stayStart) {
+            $stayEnd = $stayStart->modify('+1 day');
+        }
         $end = min($stayEnd, $scopeEnd);
 
         return $end <= $start ? 0 : (int) $start->diff($end)->days;

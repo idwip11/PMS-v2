@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Libraries\ImageUploadService;
 use App\Libraries\MaintenanceScheduleService;
+use App\Libraries\PropertyContext;
 use DateTimeImmutable;
 
 class MaintenanceController extends BaseController
@@ -54,7 +55,7 @@ class MaintenanceController extends BaseController
         $assigneeId = max(0, (int) $this->request->getPost('assigned_to_user_id'));
         $vendorName = $this->nullablePost('vendor_name');
         $blocksRoom = $this->request->getPost('blocks_room') === '1';
-        $room = $db->table('rooms')->where('id', $roomId)->get()->getRowArray();
+        $room = $db->table('rooms')->where('property_id', PropertyContext::activeId())->where('id', $roomId)->get()->getRowArray();
         $category = $db->table('maintenance_categories')->where('id', $categoryId)->where('is_active', 1)->get()->getRowArray();
 
         if ($room === null || $category === null) {
@@ -298,7 +299,7 @@ class MaintenanceController extends BaseController
         $quantity = (int) $this->request->getPost('quantity_used');
         $notes = $this->nullablePost('notes');
         $db = db_connect();
-        $item = $db->table('inventory_items')->where('id', $itemId)->where('item_type', 'Spare Part')->where('is_active', 1)->get()->getRowArray();
+        $item = $db->table('inventory_items')->where('property_id', PropertyContext::activeId())->where('id', $itemId)->where('item_type', 'Spare Part')->where('is_active', 1)->get()->getRowArray();
         if ($item === null) {
             return $this->detailResponse($id, 'danger', 'Spare part tidak ditemukan atau tidak aktif.');
         }
@@ -309,6 +310,7 @@ class MaintenanceController extends BaseController
             ->set('current_stock', 'current_stock - ' . $quantity, false)
             ->set('updated_at', $now)
             ->where('id', $itemId)
+            ->where('property_id', PropertyContext::activeId())
             ->where('current_stock >=', $quantity)
             ->update();
         if ($db->affectedRows() !== 1) {
@@ -364,6 +366,7 @@ class MaintenanceController extends BaseController
         $ticketItem = $db->table('maintenance_ticket_items')
             ->select('maintenance_ticket_items.*, inventory_items.name, inventory_items.unit')
             ->join('inventory_items', 'inventory_items.id = maintenance_ticket_items.inventory_item_id')
+            ->where('inventory_items.property_id', PropertyContext::activeId())
             ->where('maintenance_ticket_items.id', $ticketItemId)
             ->where('maintenance_ticket_items.maintenance_ticket_id', $id)
             ->where('maintenance_ticket_items.movement_type', 'Usage')
@@ -473,7 +476,12 @@ class MaintenanceController extends BaseController
 
     public function attachment(int $id)
     {
-        $attachment = db_connect()->table('maintenance_attachments')->where('id', $id)->get()->getRowArray();
+        $attachment = db_connect()->table('maintenance_attachments')
+            ->join('maintenance_tickets', 'maintenance_tickets.id = maintenance_attachments.maintenance_ticket_id')
+            ->join('rooms', 'rooms.id = maintenance_tickets.room_id')
+            ->where('rooms.property_id', PropertyContext::activeId())
+            ->where('maintenance_attachments.id', $id)
+            ->select('maintenance_attachments.*')->get()->getRowArray();
         if ($attachment === null) {
             return $this->response->setStatusCode(404)->setBody('Lampiran tidak ditemukan.');
         }
@@ -610,6 +618,7 @@ class MaintenanceController extends BaseController
         $ticket = $db->table('maintenance_tickets')
             ->select('maintenance_tickets.*, rooms.room_number, rooms.status AS room_status, maintenance_categories.name AS category_name, room_assets.asset_name, maintenance_schedules.title AS schedule_title, reporter.full_name AS reported_by_name, assignee.full_name AS assigned_to_name, verifier.full_name AS verified_by_name')
             ->join('rooms', 'rooms.id = maintenance_tickets.room_id')
+            ->where('rooms.property_id', PropertyContext::activeId())
             ->join('maintenance_categories', 'maintenance_categories.id = maintenance_tickets.maintenance_category_id', 'left')
             ->join('room_assets', 'room_assets.id = maintenance_tickets.room_asset_id', 'left')
             ->join('maintenance_schedules', 'maintenance_schedules.id = maintenance_tickets.maintenance_schedule_id', 'left')
@@ -629,7 +638,7 @@ class MaintenanceController extends BaseController
 
         return [
             'ticket' => $ticket,
-            'users' => $db->table('users')->orderBy('full_name', 'ASC')->get()->getResultArray(),
+            'users' => $db->table('users')->select('users.*')->join('user_property_roles upr', 'upr.user_id = users.id')->where('upr.property_id', PropertyContext::activeId())->orderBy('users.full_name', 'ASC')->get()->getResultArray(),
             'categories' => $db->table('maintenance_categories')->where('is_active', 1)->orderBy('name', 'ASC')->get()->getResultArray(),
             'roomAssets' => $db->table('room_assets')
                 ->where('room_id', (int) $ticket['room_id'])
@@ -651,6 +660,7 @@ class MaintenanceController extends BaseController
                 ->orderBy('maintenance_ticket_items.id', 'ASC')
                 ->get()->getResultArray(),
             'spareParts' => $db->table('inventory_items')
+                ->where('property_id', PropertyContext::activeId())
                 ->where('item_type', 'Spare Part')
                 ->where('is_active', 1)
                 ->where('current_stock >', 0)
@@ -689,12 +699,12 @@ class MaintenanceController extends BaseController
      */
     private function findTicket(int $id): ?array
     {
-        return db_connect()->table('maintenance_tickets')->where('id', $id)->get()->getRowArray();
+        return db_connect()->table('maintenance_tickets')->select('maintenance_tickets.*')->join('rooms', 'rooms.id = maintenance_tickets.room_id')->where('rooms.property_id', PropertyContext::activeId())->where('maintenance_tickets.id', $id)->get()->getRowArray();
     }
 
     private function userExists(int $id): bool
     {
-        return db_connect()->table('users')->where('id', $id)->countAllResults() > 0;
+        return db_connect()->table('user_property_roles')->where('user_id', $id)->where('property_id', PropertyContext::activeId())->countAllResults() > 0;
     }
 
     private function assetMatches(int $assetId, int $roomId, int $categoryId): bool
@@ -771,15 +781,16 @@ class MaintenanceController extends BaseController
             return;
         }
 
-        $room = $db->table('rooms')->select('room_number, floor')->where('id', (int) ($ticket['room_id'] ?? 0))->get()->getRowArray();
+        $room = $db->table('rooms')->select('room_number, floor')->where('property_id', PropertyContext::activeId())->where('id', (int) ($ticket['room_id'] ?? 0))->get()->getRowArray();
         $ticketNumber = (string) ($ticket['ticket_number'] ?? ('WO-' . str_pad((string) $ticketId, 5, '0', STR_PAD_LEFT)));
         $marker = '[Maintenance Work Order: ' . $ticketNumber . ']';
         $description = 'Maintenance ' . $ticketNumber . ' · Room ' . (string) ($room['room_number'] ?? '-');
         $notes = $marker . ' Material spare part: Rp' . number_format($sparePartCost, 0, ',', '.')
             . '; material: Rp' . number_format($manualMaterialCost, 0, ',', '.')
             . '; tenaga: Rp' . number_format($laborCost, 0, ',', '.') . '.';
-        $existing = $db->table('expenses')->select('id')->like('notes', $marker)->get()->getRowArray();
+        $existing = $db->table('expenses')->select('id')->where('property_id', PropertyContext::activeId())->like('notes', $marker)->get()->getRowArray();
         $payload = [
+            'property_id' => PropertyContext::activeId(),
             'logged_by_user_id' => (int) session('userId'),
             'description' => $description,
             'category' => 'Maintenance',
@@ -801,6 +812,11 @@ class MaintenanceController extends BaseController
             $payload['receipt_url'] = (string) $invoice['file_path'];
         }
         if ($existing !== null) {
+            $db->query('SELECT id FROM expenses WHERE id=? FOR UPDATE', [(int) $existing['id']]);
+            if (\App\Libraries\CashSourceGuard::expenseLinked($db, (int) $existing['id'])) {
+                log_message('warning', 'Maintenance expense {id} has cash settlement; source sync skipped.', ['id' => $existing['id']]);
+                return;
+            }
             $db->table('expenses')->where('id', (int) $existing['id'])->update($payload);
             return;
         }

@@ -34,12 +34,13 @@ final class MarketingAnalyticsAuditService
         return [
             'generated_at' => date(DATE_ATOM),
             'filter' => $filter->toArray() + [
+                'property_id' => $filter->propertyId(),
                 'start_date' => $filter->startDate()->format('Y-m-d'),
                 'end_date_exclusive' => $filter->endDate()->format('Y-m-d'),
             ],
             'reservations' => $this->reservationAudit($reservations, $validReservations),
-            'origins' => $this->originAudit($validReservations),
-            'duplicate_guests' => $this->duplicateGuestAudit(),
+            'origins' => $this->originAudit($validReservations, $filter),
+            'duplicate_guests' => $this->duplicateGuestAudit($filter),
             'date_ranges' => $this->dateRanges($filter),
             'payments' => $this->paymentAudit($filter),
             'expenses' => $this->expenseAudit($filter),
@@ -62,15 +63,21 @@ final class MarketingAnalyticsAuditService
                         : null,
                 ],
             ],
-            'stage_three_dashboard' => [
+            'is_monthly' => $isMonthly = PropertyPricing::forProperty($filter->propertyId())['pricing_mode'] === 'room_monthly',
+            'stage_three_dashboard' => ! $isMonthly ? [
                 'occupancy' => $dashboard['occupancy'],
                 'reconciles_with_audit' => $this->occupancyReconciles($dashboard['occupancy']),
+            ] : [
+                'vacant_days' => $dashboard['vacant_days'],
+                'tenant_turnover' => $dashboard['tenant_turnover'],
+                'committed_rent' => $dashboard['committed_rent'],
+                'lease_expirations' => $dashboard['lease_expirations'],
             ],
-            'stage_four_dashboard' => [
+            'stage_four_dashboard' => ! $isMonthly ? [
                 'annual_summary' => $dashboard['annual_summary'],
                 'reconciles_with_audit' => $this->annualSummaryReconciles($dashboard['annual_summary']),
-            ],
-            'stage_five_dashboard' => [
+            ] : null,
+            'stage_five_dashboard' => ! $isMonthly ? [
                 'forecast' => $dashboard['forecast'],
                 'reconciles_with_audit' => [
                     'minimum_history_enforced' => $dashboard['forecast']['enabled']
@@ -79,7 +86,7 @@ final class MarketingAnalyticsAuditService
                     'horizon_is_six_months' => ! $dashboard['forecast']['enabled'] || count($dashboard['forecast']['points']) === 6,
                     'bounds_are_ordered' => $this->forecastBoundsReconcile($dashboard['forecast']['points']),
                 ],
-            ],
+            ] : null,
         ];
     }
 
@@ -117,7 +124,8 @@ final class MarketingAnalyticsAuditService
         foreach ($reservations as $row) {
             $status = trim((string) ($row['status'] ?? '')) ?: '(kosong)';
             $statusCounts[$status] = ($statusCounts[$status] ?? 0) + 1;
-            if ((string) ($row['check_out_date'] ?? '') <= (string) ($row['check_in_date'] ?? '')) {
+            // Same-day checkout is a valid transit stay (one occupied night).
+            if ((string) ($row['check_out_date'] ?? '') < (string) ($row['check_in_date'] ?? '')) {
                 $invalidDateRanges++;
             }
         }
@@ -149,7 +157,7 @@ final class MarketingAnalyticsAuditService
      * @param list<array<string, mixed>> $validReservations
      * @return array<string, mixed>
      */
-    private function originAudit(array $validReservations): array
+    private function originAudit(array $validReservations, MarketingAnalyticsFilter $filter): array
     {
         $guests = [];
         foreach ($validReservations as $row) {
@@ -160,7 +168,7 @@ final class MarketingAnalyticsAuditService
         arsort($categories);
         $unknown = $categories['Tidak diketahui'] ?? 0;
         $total = count($guests);
-        $allGuests = $this->db->table('guests')->select('id, origin')->get()->getResultArray();
+        $allGuests = $this->db->table('guests')->select('id, origin')->where('property_id', $filter->propertyId())->get()->getResultArray();
         $allUnknown = count(array_filter(
             $allGuests,
             static fn (array $guest): bool => normalize_guest_origin($guest['origin'] ?? null) === 'Tidak diketahui',
@@ -178,11 +186,12 @@ final class MarketingAnalyticsAuditService
     }
 
     /** @return array<string, mixed> */
-    private function duplicateGuestAudit(): array
+    private function duplicateGuestAudit(MarketingAnalyticsFilter $filter): array
     {
         $guests = [];
         foreach ($this->db->table('guests')
             ->select('id, full_name, email, phone')
+            ->where('property_id', $filter->propertyId())
             ->orderBy('id', 'ASC')
             ->get()
             ->getResultArray() as $row) {
@@ -198,7 +207,7 @@ final class MarketingAnalyticsAuditService
         $phoneGroups = $this->duplicateGroups($guests, 'phone');
 
         return [
-            'scope' => 'Seluruh record tamu',
+            'scope' => 'Seluruh record tamu pada properti terpilih',
             'guest_record_count' => count($guests),
             'email_group_count' => count($emailGroups),
             'phone_group_count' => count($phoneGroups),
@@ -363,11 +372,12 @@ final class MarketingAnalyticsAuditService
     {
         $builder = $this->db->table('rooms')
             ->select('floor AS guesthouse, COUNT(*) AS room_count')
-            ->where('floor >=', 1)
-            ->where('floor <=', 5)
+            ->where('property_id', $filter->propertyId())
             ->groupBy('floor')
             ->orderBy('floor', 'ASC');
-        $this->queries->applyGuesthouses($builder, $filter, 'floor');
+        if ($filter->propertyId() === 1 && ! $filter->includesAllGuesthouses()) {
+            $builder->whereIn('floor', $filter->guesthouses());
+        }
 
         $counts = [];
         foreach ($builder->get()->getResultArray() as $row) {

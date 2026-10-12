@@ -65,9 +65,17 @@ final class MarketingAnalyticsQueryService
         string $checkInColumn = 'reservations.check_in_date',
         string $checkOutColumn = 'reservations.check_out_date',
     ): BaseBuilder {
-        return $builder
-            ->where($checkInColumn . ' <', $filter->endDate()->format('Y-m-d'))
-            ->where($checkOutColumn . ' >', $filter->startDate()->format('Y-m-d'));
+        return $builder->groupStart()
+            ->groupStart()
+                ->where($checkInColumn . ' <', $filter->endDate()->format('Y-m-d'))
+                ->where($checkOutColumn . ' >', $filter->startDate()->format('Y-m-d'))
+            ->groupEnd()
+            ->orGroupStart()
+                ->where($checkInColumn . ' = ' . $checkOutColumn, null, false)
+                ->where($checkInColumn . ' >=', $filter->startDate()->format('Y-m-d'))
+                ->where($checkInColumn . ' <', $filter->endDate()->format('Y-m-d'))
+            ->groupEnd()
+        ->groupEnd();
     }
 
     public function applyGuesthouses(
@@ -75,6 +83,8 @@ final class MarketingAnalyticsQueryService
         MarketingAnalyticsFilter $filter,
         string $guesthouseColumn = 'rooms.floor',
     ): BaseBuilder {
+        $builder->where('reservations.property_id', $filter->propertyId())
+            ->where('rooms.property_id', $filter->propertyId());
         if (! $filter->includesAllGuesthouses()) {
             $builder->whereIn($guesthouseColumn, $filter->guesthouses());
         }
@@ -93,6 +103,7 @@ final class MarketingAnalyticsQueryService
         BaseBuilder $builder,
         MarketingAnalyticsFilter $filter,
     ): BaseBuilder {
+        $builder->where('expenses.property_id', $filter->propertyId());
         if ($filter->includesAllGuesthouses()) {
             return $builder;
         }

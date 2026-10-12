@@ -11,22 +11,28 @@ class AuditMarketingAnalytics extends BaseCommand
 {
     protected $group = 'Marketing';
     protected $name = 'marketing:analytics-audit';
-    protected $description = 'Audit fondasi data analytics marketing berdasarkan periode dan guesthouse.';
+    protected $description = 'Audit analytics berdasarkan periode dan properti.';
     protected $usage = 'marketing:analytics-audit [options]';
     protected $options = [
         '--year' => 'Tahun laporan (default: tahun berjalan).',
         '--month' => 'Bulan 1-12; kosong atau "all" berarti seluruh tahun.',
         '--guesthouses' => 'Daftar GH dipisahkan koma, misalnya 1,2,5; kosong berarti semua.',
+        '--property' => 'ID properti 1=HomiQ, 2=Homestay Mitra, 3=Kos Mitra (default 1).',
         '--json' => 'Keluarkan hasil lengkap dalam format JSON.',
     ];
 
     public function run(array $params)
     {
+        $propertyId = filter_var(CLI::getOption('property') ?: 1, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if ($propertyId === false || db_connect()->table('properties')->where('id', $propertyId)->countAllResults() === 0) {
+            CLI::error('ID properti tidak valid.');
+            return;
+        }
         $filter = MarketingAnalyticsFilter::fromInput([
             'year' => CLI::getOption('year'),
             'month' => CLI::getOption('month'),
             'guesthouses' => CLI::getOption('guesthouses'),
-        ]);
+        ], null, $propertyId);
         $audit = (new MarketingAnalyticsAuditService(db_connect()))->audit($filter);
 
         if (CLI::getOption('json')) {
@@ -35,9 +41,9 @@ class AuditMarketingAnalytics extends BaseCommand
             return;
         }
 
-        $guesthouses = $filter->includesAllGuesthouses()
-            ? 'Semua GH'
-            : 'GH ' . implode(', GH ', $filter->guesthouses());
+        $guesthouses = $propertyId === 1
+            ? ($filter->includesAllGuesthouses() ? 'Semua GH' : 'GH ' . implode(', GH ', $filter->guesthouses()))
+            : (string) (db_connect()->table('properties')->select('name')->where('id', $propertyId)->get()->getRowArray()['name'] ?? 'Properti ' . $propertyId);
         CLI::write('Audit Analytics Marketing — ' . $filter->periodLabel() . ' — ' . $guesthouses, 'yellow');
         CLI::newLine();
         CLI::write('Reservasi', 'green');
@@ -50,7 +56,7 @@ class AuditMarketingAnalytics extends BaseCommand
         CLI::newLine();
         CLI::write('Kualitas tamu', 'green');
         CLI::write('  Origin kosong/scope  : ' . $audit['origins']['unknown'] . ' (' . number_format($audit['origins']['unknown_percentage'], 2) . '%)');
-        CLI::write('  Origin kosong/global : ' . $audit['origins']['all_guest_records_unknown'] . ' (' . number_format($audit['origins']['all_guest_records_unknown_percentage'], 2) . '%)');
+        CLI::write('  Origin kosong/properti : ' . $audit['origins']['all_guest_records_unknown'] . ' (' . number_format($audit['origins']['all_guest_records_unknown_percentage'], 2) . '%)');
         CLI::write('  Duplikat email       : ' . $audit['duplicate_guests']['email_group_count'] . ' grup');
         CLI::write('  Duplikat telepon     : ' . $audit['duplicate_guests']['phone_group_count'] . ' grup');
         CLI::newLine();
@@ -77,29 +83,42 @@ class AuditMarketingAnalytics extends BaseCommand
         $costReconciles = $audit['stage_two_dashboard']['reconciles_with_audit']['all_cost_allocated_once'];
         CLI::write('  Cost dialokasikan sekali: ' . ($costReconciles === null ? 'N/A (filter GH)' : ($costReconciles ? 'YA' : 'TIDAK')));
         CLI::newLine();
-        CLI::write('Rekonsiliasi dashboard Tahap 3', 'green');
-        $occupancy = $audit['stage_three_dashboard']['occupancy']['summary'];
-        CLI::write('  Kamar-malam terjual  : ' . number_format($occupancy['room_nights_sold'], 0, ',', '.'));
-        CLI::write('  Kamar-malam tersedia : ' . number_format($occupancy['room_nights_available'], 0, ',', '.'));
-        CLI::write('  Okupansi weighted     : ' . number_format($occupancy['occupancy'], 2, ',', '.') . '%');
-        CLI::write('  Rumus titik cocok     : ' . ($audit['stage_three_dashboard']['reconciles_with_audit']['point_formula'] ? 'YA' : 'TIDAK'));
-        CLI::write('  Rumus weighted cocok  : ' . ($audit['stage_three_dashboard']['reconciles_with_audit']['weighted_formula'] ? 'YA' : 'TIDAK'));
-        CLI::newLine();
-        CLI::write('Rekonsiliasi dashboard Tahap 4', 'green');
-        $annual = $audit['stage_four_dashboard']['annual_summary']['selected'];
-        CLI::write('  Tahun ringkasan       : ' . $annual['year']);
-        CLI::write('  Okupansi tahunan      : ' . number_format($annual['occupancy'], 2, ',', '.') . '%');
-        CLI::write('  YoY kamar-malam       : ' . ($annual['yoy_room_nights'] === null ? 'N/A' : number_format($annual['yoy_room_nights'], 2, ',', '.') . '%'));
-        CLI::write('  Rumus weighted cocok  : ' . ($audit['stage_four_dashboard']['reconciles_with_audit']['weighted_formula'] ? 'YA' : 'TIDAK'));
-        CLI::write('  Rumus YoY cocok       : ' . ($audit['stage_four_dashboard']['reconciles_with_audit']['yoy_formula'] ? 'YA' : 'TIDAK'));
-        CLI::newLine();
-        CLI::write('Rekonsiliasi dashboard Tahap 5', 'green');
-        $forecast = $audit['stage_five_dashboard']['forecast'];
-        CLI::write('  Histori lengkap       : ' . $forecast['complete_months'] . '/' . $forecast['required_months'] . ' bulan');
-        CLI::write('  Forecast aktif        : ' . ($forecast['enabled'] ? 'YA (' . $forecast['quality'] . ')' : 'TIDAK'));
-        CLI::write('  Minimum dipatuhi      : ' . ($audit['stage_five_dashboard']['reconciles_with_audit']['minimum_history_enforced'] ? 'YA' : 'TIDAK'));
-        CLI::write('  Horizon 6 bulan       : ' . ($audit['stage_five_dashboard']['reconciles_with_audit']['horizon_is_six_months'] ? 'YA' : 'TIDAK'));
-        CLI::write('  Confidence band valid : ' . ($audit['stage_five_dashboard']['reconciles_with_audit']['bounds_are_ordered'] ? 'YA' : 'TIDAK'));
+        if ($audit['is_monthly'] ?? false) {
+            $vacant = $audit['stage_three_dashboard']['vacant_days'];
+            $turnover = $audit['stage_three_dashboard']['tenant_turnover'];
+            $committed = $audit['stage_three_dashboard']['committed_rent'];
+            $expirations = $audit['stage_three_dashboard']['lease_expirations'];
+
+            CLI::write('Analytics Kos Bulanan', 'green');
+            CLI::write('  Rata-rata Kamar Kosong  : ' . number_format($vacant['average_vacant_days'], 1, ',', '.') . ' hari (' . $vacant['total_gaps'] . ' gap)');
+            CLI::write('  Turnover Penghuni       : Masuk ' . $turnover['summary']['total_in'] . ', Keluar ' . $turnover['summary']['total_out'] . ' (Net: ' . ($turnover['summary']['net'] >= 0 ? '+' : '') . $turnover['summary']['net'] . ')');
+            CLI::write('  Proyeksi Sewa Bln Depan : Rp' . number_format($committed['committed_rent'], 0, ',', '.') . ' (' . $committed['committed_rooms'] . '/' . $committed['total_rooms'] . ' kamar, ' . $committed['occupancy_rate'] . '%)');
+            CLI::write('  Radar Jatuh Tempo       : ' . $expirations['count_7'] . ' sewa dlm 7 hari, ' . $expirations['count_30'] . ' sewa dlm 30 hari');
+        } else {
+            CLI::write('Rekonsiliasi dashboard Tahap 3', 'green');
+            $occupancy = $audit['stage_three_dashboard']['occupancy']['summary'];
+            CLI::write('  Kamar-malam terjual  : ' . number_format($occupancy['room_nights_sold'], 0, ',', '.'));
+            CLI::write('  Kamar-malam tersedia : ' . number_format($occupancy['room_nights_available'], 0, ',', '.'));
+            CLI::write('  Okupansi weighted     : ' . number_format($occupancy['occupancy'], 2, ',', '.') . '%');
+            CLI::write('  Rumus titik cocok     : ' . ($audit['stage_three_dashboard']['reconciles_with_audit']['point_formula'] ? 'YA' : 'TIDAK'));
+            CLI::write('  Rumus weighted cocok  : ' . ($audit['stage_three_dashboard']['reconciles_with_audit']['weighted_formula'] ? 'YA' : 'TIDAK'));
+            CLI::newLine();
+            CLI::write('Rekonsiliasi dashboard Tahap 4', 'green');
+            $annual = $audit['stage_four_dashboard']['annual_summary']['selected'];
+            CLI::write('  Tahun ringkasan       : ' . $annual['year']);
+            CLI::write('  Okupansi tahunan      : ' . number_format($annual['occupancy'], 2, ',', '.') . '%');
+            CLI::write('  YoY kamar-malam       : ' . ($annual['yoy_room_nights'] === null ? 'N/A' : number_format($annual['yoy_room_nights'], 2, ',', '.') . '%'));
+            CLI::write('  Rumus weighted cocok  : ' . ($audit['stage_four_dashboard']['reconciles_with_audit']['weighted_formula'] ? 'YA' : 'TIDAK'));
+            CLI::write('  Rumus YoY cocok       : ' . ($audit['stage_four_dashboard']['reconciles_with_audit']['yoy_formula'] ? 'YA' : 'TIDAK'));
+            CLI::newLine();
+            CLI::write('Rekonsiliasi dashboard Tahap 5', 'green');
+            $forecast = $audit['stage_five_dashboard']['forecast'];
+            CLI::write('  Histori lengkap       : ' . $forecast['complete_months'] . '/' . $forecast['required_months'] . ' bulan');
+            CLI::write('  Forecast aktif        : ' . ($forecast['enabled'] ? 'YA (' . $forecast['quality'] . ')' : 'TIDAK'));
+            CLI::write('  Minimum dipatuhi      : ' . ($audit['stage_five_dashboard']['reconciles_with_audit']['minimum_history_enforced'] ? 'YA' : 'TIDAK'));
+            CLI::write('  Horizon 6 bulan       : ' . ($audit['stage_five_dashboard']['reconciles_with_audit']['horizon_is_six_months'] ? 'YA' : 'TIDAK'));
+            CLI::write('  Confidence band valid : ' . ($audit['stage_five_dashboard']['reconciles_with_audit']['bounds_are_ordered'] ? 'YA' : 'TIDAK'));
+        }
         CLI::newLine();
         CLI::write('Gunakan --json untuk hasil lengkap dan rekonsiliasi mesin.', 'light_gray');
     }

@@ -5,7 +5,10 @@ namespace App\Libraries;
 final class RoleAccess
 {
     /** @var list<string> */
-    public const OWNER_ROLES = ['Owner GH 1', 'Owner GH 2', 'Owner GH 3', 'Owner GH 4', 'Owner GH 5'];
+    public const OWNER_ROLES = [
+        'Owner GH 1', 'Owner GH 2', 'Owner GH 3', 'Owner GH 4', 'Owner GH 5',
+        'Owner HS Mitra', 'Owner Kos Mitra', 'Owner Mitra',
+    ];
 
     /** @var array<string,list<string>> */
     private const PERMISSIONS = [
@@ -13,19 +16,21 @@ final class RoleAccess
         'owner_finance' => self::OWNER_ROLES,
         'dashboard' => ['Atmin', 'Admin', 'Manager', 'Finance', 'Marketing', 'Operational', 'Staff'],
         'finance' => ['Atmin', 'Manager', 'Finance', 'Operational'],
+        'company_finance' => ['Manager', 'Finance'],
         'analytics' => ['Atmin', 'Admin', 'Manager', 'Finance', 'Marketing', 'Operational', 'Staff'],
         'operations' => ['Atmin', 'Admin', 'Manager', 'Finance', 'Operational'],
         'front_desk' => ['Atmin', 'Admin', 'Manager', 'Finance', 'Marketing', 'Operational', 'Staff'],
-        'payment_proof' => ['Atmin', 'Admin', 'Manager', 'Finance', 'Marketing', 'Operational', 'Staff', 'Owner GH 1', 'Owner GH 2', 'Owner GH 3', 'Owner GH 4', 'Owner GH 5'],
-        'expense_receipt' => ['Atmin', 'Admin', 'Manager', 'Finance', 'Operational', 'Owner GH 1', 'Owner GH 2', 'Owner GH 3', 'Owner GH 4', 'Owner GH 5'],
+        'payment_proof' => ['Atmin', 'Admin', 'Manager', 'Finance', 'Marketing', 'Operational', 'Staff', ...self::OWNER_ROLES],
+        'expense_receipt' => ['Atmin', 'Admin', 'Manager', 'Finance', 'Operational', ...self::OWNER_ROLES],
         'housekeeping' => ['Atmin', 'Admin', 'Manager', 'Finance', 'Marketing', 'Operational', 'Housekeeping', 'Staff'],
-        'settings' => ['Atmin', 'Admin'],
+        'settings' => ['Atmin', 'Admin', 'Manager'],
         'support' => ['Atmin', 'Admin', 'Manager', 'Finance', 'Marketing', 'Operational', 'Staff'],
     ];
 
     public static function allows(string $role, string $permission): bool
     {
-        return in_array($role, self::PERMISSIONS[$permission] ?? [], true);
+        $allowed = self::PERMISSIONS[$permission] ?? [];
+        return in_array($role, $allowed, true) || in_array(ucfirst(strtolower($role)), $allowed, true);
     }
 
     public static function landingPath(string $role): string

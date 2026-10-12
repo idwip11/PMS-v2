@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-12",
+  "status": "passed-local",
+  "regression": {
+    "stage2": 47,
+    "stage3": 50,
+    "stage4": 84,
+    "stage5": 49
+  },
+  "stage6": {
+    "mariadb": 70,
+    "financial_edges": 8,
+    "holding": 9,
+    "http": 63
+  },
+  "total_checks": 380,
+  "responsive_combinations": 30,
+  "php_runtime": "8.3.33",
+  "source_hashes": {
+    "unchanged_tables": 54,
+    "total_tables": 55,
+    "changed_table": "extra_bed_settings",
+    "observation": "Default stock rows property 2=5 and 3=0 initialized during validation window; retained. Financial and operational transaction tables unchanged."
+  },
+  "cleanup": {
+    "test_database_removed": true,
+    "test_server_stopped": true,
+    "temporary_chrome_closed": true
+  }
+}

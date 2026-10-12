@@ -18,6 +18,21 @@ class DefaultDataSeeder extends Seeder
             'role' => 'Admin',
             'created_at' => $now,
         ]);
+        $adminId = (int) $this->db->insertID();
+
+        // Migrasi AddUserPropertyRoles hanya mem-backfill user yang sudah ada saat migrasi.
+        // Pada instalasi baru user dibuat setelahnya, jadi akses properti admin diberikan di sini.
+        if ($this->db->tableExists('user_property_roles') && $this->db->tableExists('properties')) {
+            foreach ($this->db->table('properties')->select('id')->get()->getResultArray() as $property) {
+                $this->db->table('user_property_roles')->insert([
+                    'user_id' => $adminId,
+                    'property_id' => (int) $property['id'],
+                    'role' => 'Admin',
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            }
+        }
 
         $doubleBedRooms = [
             '103', '104', '105', '201', '204', '205', '206',

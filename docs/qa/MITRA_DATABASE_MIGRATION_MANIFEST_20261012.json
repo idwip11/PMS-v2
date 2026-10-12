@@ -1,0 +1,42 @@
+[
+  {
+    "file": "app/Database/Migrations/2026-09-29000000_AddPropertiesFoundation.php",
+    "sha256": "49bd4c853d6634273e0c53c0438bb23ded5711efaf612d48bf539ec260025544",
+    "recorded_local": true
+  },
+  {
+    "file": "app/Database/Migrations/2026-09-29010000_AddUserPropertyRoles.php",
+    "sha256": "497b1ac6709e2e4783d7529c5bddcf66a153c6d10bbfb636339221d9f93ab81a",
+    "recorded_local": true
+  },
+  {
+    "file": "app/Database/Migrations/2026-09-29020000_AddMitraPricingAndRooms.php",
+    "sha256": "362593c1729e4ad3262eb5804961bf4343a4ffb39717ad1b5421175e4c8ca049",
+    "recorded_local": true
+  },
+  {
+    "file": "app/Database/Migrations/2026-10-01000000_AddCompanyCashFoundation.php",
+    "sha256": "b09fcf77df8559e4609cc3c0f45e978c97c937f2365a99d58b02833ff6d2e7e6",
+    "recorded_local": true
+  },
+  {
+    "file": "app/Database/Migrations/2026-10-01010000_AddCompanyCashIntegration.php",
+    "sha256": "cc455c2c05d35583c0b1315a1984c6b5ee061337079818ff9a239aa03198a5d8",
+    "recorded_local": true
+  },
+  {
+    "file": "app/Database/Migrations/2026-10-01020000_AddCompanyEntitlementsAndObligations.php",
+    "sha256": "ff9388e57427f0581b0f6652a3aaa0944a0c009470d217454525e69971fec9c9",
+    "recorded_local": true
+  },
+  {
+    "file": "app/Database/Migrations/2026-10-01030000_AddCompanyReconciliationAndSnapshots.php",
+    "sha256": "9bf76b23c7a5acab27705d07dac658be231da3feaa418013e6a7c0d5b3213b07",
+    "recorded_local": true
+  },
+  {
+    "file": "app/Database/Migrations/2026-10-12000000_AddMitraFinanceReportGroups.php",
+    "sha256": "b549d159dfa2712ee2b2a6065c38b4ed80f2813ec938932108a65d55278e693a",
+    "recorded_local": true
+  }
+]

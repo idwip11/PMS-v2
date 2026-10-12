@@ -4,7 +4,7 @@
     <div class="card shadow-lg border-0 auth-card w-100">
         <div class="card-body p-4 p-md-5">
             <div class="text-center mb-4">
-                <div class="brand-mark mb-3">H</div>
+                <img src="<?= base_url('images/homiq-icon.svg') ?>" alt="HomiQ Logo" width="68" height="68" class="mb-3 d-inline-block">
                 <h1 class="h3 mb-1">HomiQ PMS</h1>
                 <p class="text-secondary mb-0">Property Management System</p>
             </div>

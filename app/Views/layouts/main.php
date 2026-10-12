@@ -7,6 +7,11 @@
     <meta name="csrf-token-name" content="<?= csrf_token() ?>">
     <meta name="csrf-cookie-name" content="<?= config('Security')->cookieName ?>">
     <title><?= esc($title ?? 'HomiQ PMS') ?></title>
+    <link rel="icon" type="image/svg+xml" href="<?= base_url('images/homiq-icon.svg') ?>?v=2">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= base_url('images/homiq-icon-32.png') ?>?v=2">
+    <link rel="icon" type="image/png" sizes="16x16" href="<?= base_url('images/homiq-icon-16.png') ?>?v=2">
+    <link rel="apple-touch-icon" href="<?= base_url('images/homiq-icon.png') ?>?v=2">
+    <link rel="shortcut icon" href="<?= base_url('favicon.ico') ?>?v=2">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="<?= base_url('css/app.css') ?>?v=<?= filemtime(FCPATH . 'css/app.css') ?>" rel="stylesheet">
 </head>

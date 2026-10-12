@@ -13,7 +13,8 @@ $guesthouseQuery = $guesthouse !== null ? '&guesthouse=' . $guesthouse : '';
             <span><i class="legend-dot bg-warning"></i> DP</span>
             <span><i class="legend-dot bg-danger"></i> Belum Bayar</span>
             <span><i class="legend-dot legend-reconciled"></i> Terekonsiliasi</span>
-            <span><i class="legend-checkin">✓</i> Sudah Check-in</span>
+            <span><i class="legend-checkin">✓</i> <?= (\App\Libraries\PropertyPricing::active()['pricing_mode'] === 'room_monthly') ? 'Sudah Masuk' : 'Sudah Check-in' ?></span>
+            <span><i class="legend-checkout">✓</i> <?= (\App\Libraries\PropertyPricing::active()['pricing_mode'] === 'room_monthly') ? 'Sudah Keluar' : 'Sudah Check-out' ?></span>
         </div>
         <div class="room-map-controls d-flex flex-wrap align-items-center gap-2">
             <div class="btn-group shadow-sm" role="group" aria-label="Navigasi bulan">
@@ -23,6 +24,7 @@ $guesthouseQuery = $guesthouse !== null ? '&guesthouse=' . $guesthouse : '';
                 <a id="room-map-next" class="btn btn-light border" href="<?= site_url('room-map?month=' . $next . $guesthouseQuery) ?>"
                    hx-get="<?= site_url('room-map/grid?month=' . $next . $guesthouseQuery) ?>" hx-target="#room-map-grid" hx-push-url="<?= site_url('room-map?month=' . $next . $guesthouseQuery) ?>">&rarr;</a>
             </div>
+            <?php if (\App\Libraries\PropertyContext::activeId() === \App\Libraries\PropertyContext::HOMIQ_ID): ?>
             <div class="d-flex align-items-center gap-2">
                 <label class="form-label mb-0 text-secondary" for="guesthouse-filter">Guesthouse</label>
                 <select id="guesthouse-filter" class="form-select room-map-gh-filter" name="guesthouse"
@@ -34,9 +36,11 @@ $guesthouseQuery = $guesthouse !== null ? '&guesthouse=' . $guesthouse : '';
                     <?php endfor; ?>
                 </select>
             </div>
+            <?php endif; ?>
         </div>
     </div>
     <div id="room-map-grid"
+         hx-headers='{"Cache-Control":"no-cache","Pragma":"no-cache"}'
          hx-get="<?= site_url('room-map/grid?month=' . $month . $guesthouseQuery) ?>"
          hx-trigger="load, reservationChanged from:body"
          hx-swap="innerHTML">

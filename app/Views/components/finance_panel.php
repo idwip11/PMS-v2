@@ -11,10 +11,49 @@
 <div class="row g-4 align-items-start">
     <div class="col-12">
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center py-3"><h3 class="h6 mb-0">Transactions — <?= esc($month) ?></h3><a class="btn btn-sm btn-success" href="<?= site_url('finance/export?month=' . $month) ?>">Export Excel</a></div>
-            <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Date</th><th>Type</th><th>Tipe Pembayaran</th><th>Reference</th><th>Description</th><th>Method/Category</th><th class="text-end">Amount</th></tr></thead><tbody>
-            <?php if ($transactions === []): ?><tr><td colspan="7" class="text-center text-secondary py-5">Belum ada transaksi pada periode ini.</td></tr><?php endif; ?>
-            <?php foreach ($transactions as $transaction): ?><tr><td><?= esc($transaction['date']) ?></td><td><span class="badge <?= $transaction['type'] === 'Income' ? 'text-bg-success' : 'text-bg-danger' ?>"><?= esc($transaction['type']) ?></span></td><td><?= esc($transaction['payment_type']) ?></td><td><?= esc($transaction['reference']) ?></td><td><?= esc($transaction['description']) ?></td><td><?= esc($transaction['method']) ?></td><td class="text-end fw-semibold <?= $transaction['amount'] < 0 ? 'text-danger' : 'text-success' ?>">Rp<?= number_format((float) $transaction['amount'], 0, ',', '.') ?></td></tr><?php endforeach; ?>
+            <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                <h3 class="h6 mb-0">
+                    Transactions — <?= esc($month) ?>
+                    <?php if (! empty($isCombined)): ?>
+                        <span class="badge text-bg-light border text-secondary ms-2 fw-normal">Gabungan Mitra</span>
+                    <?php endif; ?>
+                </h3>
+                <a class="btn btn-sm btn-success" href="<?= site_url('finance/export?month=' . $month) ?>">Export Excel</a>
+            </div>
+            <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr>
+                <th>Date</th>
+                <?php if (! empty($isCombined)): ?>
+                    <th>Asal Properti</th>
+                <?php endif; ?>
+                <th>Type</th>
+                <th>Tipe Pembayaran</th>
+                <th>Reference</th>
+                <th>Description</th>
+                <th>Method/Category</th>
+                <th class="text-end">Amount</th>
+            </tr></thead><tbody>
+            <?php if ($transactions === []): ?><tr><td colspan="<?= ! empty($isCombined) ? '8' : '7' ?>" class="text-center text-secondary py-5">Belum ada transaksi pada periode ini.</td></tr><?php endif; ?>
+            <?php foreach ($transactions as $transaction): ?><tr>
+                <td><?= esc($transaction['date']) ?></td>
+                <?php if (! empty($isCombined)): ?>
+                    <td>
+                        <span class="badge <?= (int) ($transaction['property_id'] ?? 0) === 2 ? 'text-bg-info' : 'text-bg-warning' ?> bg-opacity-10 text-dark border">
+                            <?= esc($transaction['property_name']) ?>
+                        </span>
+                    </td>
+                <?php endif; ?>
+                <td><span class="badge <?= $transaction['type'] === 'Income' ? 'text-bg-success' : 'text-bg-danger' ?>"><?= esc($transaction['type']) ?></span></td>
+                <td><?= esc($transaction['payment_type']) ?></td>
+                <td><?= esc($transaction['reference']) ?></td>
+                <td>
+                    <div><?= esc($transaction['description']) ?></div>
+                    <?php if ($transaction['type'] === 'Income' && ! empty($transaction['duration'])): ?>
+                        <small class="text-secondary"><?= esc($transaction['room']) ?> · <?= esc($transaction['duration']) ?></small>
+                    <?php endif; ?>
+                </td>
+                <td><?= esc($transaction['method']) ?></td>
+                <td class="text-end fw-semibold <?= $transaction['type'] === 'Expense' ? 'text-danger' : 'text-success' ?>">Rp<?= number_format(abs((float) $transaction['amount']), 0, ',', '.') ?></td>
+            </tr><?php endforeach; ?>
             </tbody></table></div>
             <?php if ($pagination['totalItems'] > 0): ?>
                 <div class="card-footer bg-white d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3 py-3">

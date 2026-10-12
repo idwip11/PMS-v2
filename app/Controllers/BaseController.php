@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Libraries\PropertyContext;
 use CodeIgniter\Controller;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -51,5 +52,21 @@ abstract class BaseController extends Controller
                 log_message('error', 'Unable to load last data update: {message}', ['message' => $exception->getMessage()]);
             }
         }
+    }
+
+    /**
+     * Parse currency / nominal input that may contain dots or currency symbols.
+     */
+    protected function parseMoney(mixed $value, float $default = 0.0): float
+    {
+        if ($value === null || $value === '') {
+            return $default;
+        }
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+        $clean = str_replace(['Rp', 'rp', ' ', '.'], '', (string) $value);
+        $clean = str_replace(',', '.', $clean);
+        return is_numeric($clean) ? (float) $clean : $default;
     }
 }

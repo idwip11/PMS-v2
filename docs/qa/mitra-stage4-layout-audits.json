@@ -1,0 +1,212 @@
+[
+  {
+    "page": "owner",
+    "device": "phone",
+    "viewport": 390,
+    "documentWidth": 390,
+    "mainWidth": 390,
+    "forms": [
+      {
+        "label": "month",
+        "width": 358,
+        "left": 16,
+        "right": 374
+      },
+      {
+        "label": "Tampilkan",
+        "width": 358,
+        "left": 16,
+        "right": 374
+      }
+    ],
+    "tables": [
+      {
+        "viewport": 358,
+        "content": 358
+      },
+      {
+        "viewport": 358,
+        "content": 695
+      }
+    ]
+  },
+  {
+    "page": "setup",
+    "device": "phone",
+    "viewport": 390,
+    "documentWidth": 390,
+    "mainWidth": 390,
+    "forms": [
+      {
+        "label": "owner_name",
+        "width": 326,
+        "left": 32,
+        "right": 358
+      },
+      {
+        "label": "cooperation_fee_percentage",
+        "width": 326,
+        "left": 32,
+        "right": 358
+      },
+      {
+        "label": "Simpan Perubahan",
+        "width": 162,
+        "left": 32,
+        "right": 194
+      },
+      {
+        "label": "Hapus",
+        "width": 59,
+        "left": 346,
+        "right": 405
+      }
+    ],
+    "tables": [
+      {
+        "viewport": 358,
+        "content": 397
+      }
+    ]
+  },
+  {
+    "page": "owner",
+    "device": "tablet",
+    "viewport": 768,
+    "documentWidth": 768,
+    "mainWidth": 768,
+    "forms": [
+      {
+        "label": "month",
+        "width": 214,
+        "left": 246,
+        "right": 460
+      },
+      {
+        "label": "Tampilkan",
+        "width": 99,
+        "left": 468,
+        "right": 567
+      }
+    ],
+    "tables": [
+      {
+        "viewport": 720,
+        "content": 720
+      },
+      {
+        "viewport": 720,
+        "content": 720
+      }
+    ]
+  },
+  {
+    "page": "setup",
+    "device": "tablet",
+    "viewport": 768,
+    "documentWidth": 768,
+    "mainWidth": 768,
+    "forms": [
+      {
+        "label": "owner_name",
+        "width": 271,
+        "left": 48,
+        "right": 319
+      },
+      {
+        "label": "cooperation_fee_percentage",
+        "width": 156,
+        "left": 564,
+        "right": 720
+      },
+      {
+        "label": "Simpan Perubahan",
+        "width": 162,
+        "left": 48,
+        "right": 210
+      },
+      {
+        "label": "Hapus",
+        "width": 59,
+        "left": 677,
+        "right": 736
+      }
+    ],
+    "tables": [
+      {
+        "viewport": 720,
+        "content": 720
+      }
+    ]
+  },
+  {
+    "page": "owner",
+    "device": "desktop",
+    "viewport": 1440,
+    "documentWidth": 1440,
+    "mainWidth": 1160,
+    "forms": [
+      {
+        "label": "month",
+        "width": 214,
+        "left": 550,
+        "right": 764
+      },
+      {
+        "label": "Tampilkan",
+        "width": 99,
+        "left": 772,
+        "right": 871
+      }
+    ],
+    "tables": [
+      {
+        "viewport": 1064,
+        "content": 1064
+      },
+      {
+        "viewport": 1064,
+        "content": 1064
+      }
+    ]
+  },
+  {
+    "page": "setup",
+    "device": "desktop",
+    "viewport": 1440,
+    "documentWidth": 1440,
+    "mainWidth": 1160,
+    "forms": [
+      {
+        "label": "owner_name",
+        "width": 414,
+        "left": 352,
+        "right": 766
+      },
+      {
+        "label": "cooperation_fee_percentage",
+        "width": 242,
+        "left": 1126,
+        "right": 1368
+      },
+      {
+        "label": "Simpan Perubahan",
+        "width": 162,
+        "left": 352,
+        "right": 514
+      },
+      {
+        "label": "Hapus",
+        "width": 59,
+        "left": 1325,
+        "right": 1384
+      }
+    ],
+    "tables": [
+      {
+        "viewport": 1064,
+        "content": 1064
+      }
+    ]
+  }
+]

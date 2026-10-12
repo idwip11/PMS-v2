@@ -17,6 +17,7 @@ class GuestDirectory
     public function save(array $data, ?int $selectedGuestId = null): int
     {
         $guest = [
+            'property_id' => PropertyContext::activeId(),
             'full_name' => trim((string) ($data['full_name'] ?? '')),
             'email' => $this->nullable($data['email'] ?? null),
             'phone' => $this->nullable($data['phone'] ?? null),
@@ -39,7 +40,7 @@ class GuestDirectory
                     $updates[$field] = $guest[$field];
                 }
             }
-            $this->db->table('guests')->where('id', $guestId)->update($updates);
+            $this->db->table('guests')->where('id', $guestId)->where('property_id', PropertyContext::activeId())->update($updates);
 
             return $guestId;
         }
@@ -51,7 +52,7 @@ class GuestDirectory
 
     private function findGuestId(int $guestId): ?int
     {
-        $row = $this->db->table('guests')->select('id')->where('id', $guestId)->get()->getRowArray();
+        $row = $this->db->table('guests')->select('id')->where('id', $guestId)->where('property_id', PropertyContext::activeId())->get()->getRowArray();
 
         return $row === null ? null : (int) $row['id'];
     }
@@ -63,6 +64,7 @@ class GuestDirectory
             if ($needle !== null) {
                 $rows = $this->db->table('guests')
                     ->select('id, phone')
+                    ->where('property_id', PropertyContext::activeId())
                     ->where('phone IS NOT NULL', null, false)
                     ->get()
                     ->getResultArray();
@@ -78,6 +80,7 @@ class GuestDirectory
         if ($email !== null) {
             $row = $this->db->table('guests')
                 ->select('id')
+                ->where('property_id', PropertyContext::activeId())
                 ->where('LOWER(email)', canonical_guest_email($email))
                 ->get()
                 ->getRowArray();

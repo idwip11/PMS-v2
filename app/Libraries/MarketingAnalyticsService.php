@@ -35,15 +35,31 @@ final class MarketingAnalyticsService
     /** @return array<string,mixed> */
     public function dashboard(MarketingAnalyticsFilter $filter): array
     {
-        return $this->stageOne($filter) + [
+        $isMonthly = PropertyPricing::forProperty($filter->propertyId())['pricing_mode'] === 'room_monthly';
+
+        $data = $this->stageOne($filter) + [
             'performance' => $this->performance($filter),
-            'service_revenue' => $this->serviceRevenue($filter),
-            'cancellations' => $this->cancellations($filter),
-            'booking_window' => $this->bookingWindow($filter),
-            'occupancy' => $this->occupancy($filter),
-            'annual_summary' => $this->annualSummary($filter),
-            'forecast' => $this->forecast($filter),
         ];
+
+        if ($isMonthly) {
+            $data += [
+                'vacant_days' => $this->vacantDays($filter),
+                'tenant_turnover' => $this->tenantTurnover($filter),
+                'committed_rent' => $this->committedRent($filter),
+                'lease_expirations' => $this->leaseExpirations($filter),
+            ];
+        } else {
+            $data += [
+                'service_revenue' => $this->serviceRevenue($filter),
+                'cancellations' => $this->cancellations($filter),
+                'booking_window' => $this->bookingWindow($filter),
+                'occupancy' => $this->occupancy($filter),
+                'annual_summary' => $this->annualSummary($filter),
+                'forecast' => $this->forecast($filter),
+            ];
+        }
+
+        return $data;
     }
 
     /** @return array{services:array<string,float>,total:float,payment_count:int} */
@@ -378,9 +394,10 @@ final class MarketingAnalyticsService
     private function roomCount(MarketingAnalyticsFilter $filter): int
     {
         $builder = $this->db->table('rooms')
-            ->where('floor >=', 1)
-            ->where('floor <=', 5);
-        $this->queries->applyGuesthouses($builder, $filter, 'floor');
+            ->where('property_id', $filter->propertyId());
+        if ($filter->propertyId() === 1 && ! $filter->includesAllGuesthouses()) {
+            $builder->whereIn('floor', $filter->guesthouses());
+        }
 
         return $builder->countAllResults();
     }
@@ -393,8 +410,26 @@ final class MarketingAnalyticsService
      */
     private function performance(MarketingAnalyticsFilter $filter): array
     {
+        if ($filter->propertyId() !== 1) {
+            $paid = $this->queries->payments($filter)
+                ->selectSum('payments.amount', 'total')
+                ->get()->getRowArray();
+            $expenses = $this->queries->expenses($filter)
+                ->selectSum('expenses.amount', 'total')
+                ->get()->getRowArray();
+            $revenue = (float) ($paid['total'] ?? 0);
+            $cost = (float) ($expenses['total'] ?? 0);
+            $profit = $revenue - $cost;
+            $margin = $revenue === 0.0 ? null : ($profit / $revenue) * 100;
+
+            return [
+                'rows' => [['guesthouse' => 0, 'revenue' => $revenue, 'cost' => $cost, 'profit' => $profit, 'margin' => $margin]],
+                'totals' => ['revenue' => $revenue, 'cost' => $cost, 'profit' => $profit, 'margin' => $margin],
+                'unallocated_expense' => 0.0,
+            ];
+        }
         $guesthouses = $filter->includesAllGuesthouses()
-            ? $this->allGuesthouses()
+            ? $this->allGuesthouses($filter->propertyId())
             : $filter->guesthouses();
         $revenue = array_fill_keys($guesthouses, 0.0);
         $cost = array_fill_keys($guesthouses, 0.0);
@@ -412,6 +447,7 @@ final class MarketingAnalyticsService
 
         $expenses = $this->db->table('expenses')
             ->select('id, amount, guesthouse')
+            ->where('property_id', $filter->propertyId())
             ->where('status !=', 'Rejected');
         $this->queries->applyPeriod($expenses, $filter, 'date_incurred');
         $expenses = $expenses->get()->getResultArray();
@@ -490,12 +526,12 @@ final class MarketingAnalyticsService
     }
 
     /** @return list<int> */
-    private function allGuesthouses(): array
+    private function allGuesthouses(int $propertyId): array
     {
         return array_map(
             'intval',
             array_column(
-                $this->db->table('rooms')->select('floor')->where('floor >=', 1)->where('floor <=', 5)->groupBy('floor')->orderBy('floor', 'ASC')->get()->getResultArray(),
+                $this->db->table('rooms')->select('floor')->where('property_id', $propertyId)->where('floor >=', 1)->where('floor <=', 5)->groupBy('floor')->orderBy('floor', 'ASC')->get()->getResultArray(),
                 'floor',
             ),
         );
@@ -573,7 +609,7 @@ final class MarketingAnalyticsService
             ->select(
                 'reservations.guest_id, '
                 . "COALESCE(NULLIF(reservations.booking_group_id, ''), reservations.order_id) AS booking_key, "
-                . 'MAX(GREATEST(DATEDIFF(reservations.check_out_date, reservations.check_in_date), 0)) AS nights, '
+                . 'MAX(GREATEST(DATEDIFF(reservations.check_out_date, reservations.check_in_date), 1)) AS nights, '
                 . 'SUM(reservations.total_amount) AS nominal',
                 false,
             )
@@ -582,7 +618,9 @@ final class MarketingAnalyticsService
                 false,
             );
 
-        return $this->db->newQuery()
+        $isMonthly = \App\Libraries\PropertyPricing::forProperty($filter->propertyId())['pricing_mode'] === 'room_monthly';
+
+        $query = $this->db->newQuery()
             ->fromSubquery($perBooking, 'booking_stats')
             ->select(
                 'guests.id AS guest_id, guests.full_name, guests.email, guests.phone, guests.origin, '
@@ -591,13 +629,328 @@ final class MarketingAnalyticsService
                 false,
             )
             ->join('guests', 'guests.id = booking_stats.guest_id')
-            ->groupBy('guests.id, guests.full_name, guests.email, guests.phone, guests.origin')
-            ->orderBy('booking_count', 'DESC')
-            ->orderBy('total_nights', 'DESC')
-            ->orderBy('total_nominal', 'DESC')
+            ->groupBy('guests.id, guests.full_name, guests.email, guests.phone, guests.origin');
+
+        if ($isMonthly) {
+            $query->orderBy('total_nights', 'DESC')
+                ->orderBy('total_nominal', 'DESC')
+                ->orderBy('booking_count', 'DESC');
+        } else {
+            $query->orderBy('booking_count', 'DESC')
+                ->orderBy('total_nights', 'DESC')
+                ->orderBy('total_nominal', 'DESC');
+        }
+
+        return $query
             ->orderBy('guests.full_name', 'ASC')
             ->limit(10)
             ->get()
             ->getResultArray();
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    //  Kos-specific analytics (room_monthly properties only)
+    // ──────────────────────────────────────────────────────────────────────
+
+    /**
+     * Rata-rata Waktu Kamar Kosong (Vacant Days).
+     *
+     * For each room, compute the gap (in days) between consecutive tenancies.
+     * If a room is currently vacant, the gap from the last check-out to today
+     * is included.
+     *
+     * @return array{average_vacant_days:float,total_gaps:int,rooms:list<array<string,mixed>>}
+     */
+    private function vacantDays(MarketingAnalyticsFilter $filter): array
+    {
+        $propertyId = $filter->propertyId();
+
+        // All rooms for this property
+        $rooms = $this->db->table('rooms')
+            ->select('id, room_number')
+            ->where('property_id', $propertyId)
+            ->orderBy('room_number', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        // All valid reservations for property, ordered by room then check-in
+        $reservations = $this->db->table('reservations')
+            ->select('reservations.room_id, reservations.check_in_date, reservations.check_out_date, reservations.status')
+            ->join('rooms', 'rooms.id = reservations.room_id')
+            ->where('reservations.property_id', $propertyId)
+            ->whereIn('reservations.status', ['Confirmed', 'Checked_In', 'Checked_Out'])
+            ->orderBy('reservations.room_id', 'ASC')
+            ->orderBy('reservations.check_in_date', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        // Group reservations by room_id
+        $byRoom = [];
+        foreach ($reservations as $r) {
+            $byRoom[(int) $r['room_id']][] = $r;
+        }
+
+        $today = new \DateTimeImmutable('today');
+        $allGaps = [];
+        $roomResults = [];
+
+        foreach ($rooms as $room) {
+            $roomId = (int) $room['id'];
+            $roomReservations = $byRoom[$roomId] ?? [];
+            $gaps = [];
+            $lastCheckout = null;
+            $currentlyOccupied = false;
+
+            foreach ($roomReservations as $i => $r) {
+                $checkIn = new \DateTimeImmutable((string) $r['check_in_date']);
+                $checkOut = new \DateTimeImmutable((string) $r['check_out_date']);
+
+                if ($lastCheckout !== null && $checkIn > $lastCheckout) {
+                    $gap = (int) $lastCheckout->diff($checkIn)->days;
+                    if ($gap > 0) {
+                        $gaps[] = $gap;
+                    }
+                }
+                $lastCheckout = $checkOut;
+
+                // Check if currently occupied
+                if (in_array($r['status'], ['Confirmed', 'Checked_In'], true) && $checkIn <= $today && $checkOut > $today) {
+                    $currentlyOccupied = true;
+                }
+            }
+
+            // If room is currently vacant and has history, add gap from last checkout to today
+            $vacantSinceLastCheckout = null;
+            if (!$currentlyOccupied && $lastCheckout !== null && $lastCheckout <= $today) {
+                $vacantSinceLastCheckout = (int) $lastCheckout->diff($today)->days;
+                if ($vacantSinceLastCheckout > 0) {
+                    $gaps[] = $vacantSinceLastCheckout;
+                }
+            }
+
+            $avgGap = $gaps !== [] ? round(array_sum($gaps) / count($gaps), 1) : 0.0;
+            $allGaps = array_merge($allGaps, $gaps);
+
+            $roomResults[] = [
+                'room_number' => $room['room_number'],
+                'currently_occupied' => $currentlyOccupied,
+                'last_checkout' => $lastCheckout?->format('Y-m-d'),
+                'vacant_days_current' => $vacantSinceLastCheckout,
+                'average_gap' => $avgGap,
+                'total_tenancies' => count($roomReservations),
+            ];
+        }
+
+        $overallAvg = $allGaps !== [] ? round(array_sum($allGaps) / count($allGaps), 1) : 0.0;
+
+        return [
+            'average_vacant_days' => $overallAvg,
+            'total_gaps' => count($allGaps),
+            'rooms' => $roomResults,
+        ];
+    }
+
+    /**
+     * Turnover Penghuni: Masuk vs Keluar per bulan.
+     *
+     * "Masuk" = reservasi yang check-in date falls in each month.
+     * "Keluar" = reservasi yang check-out date falls in each month.
+     *
+     * @return array{months:list<array{label:string,month:string,in:int,out:int,net:int}>,summary:array{total_in:int,total_out:int,net:int}}
+     */
+    private function tenantTurnover(MarketingAnalyticsFilter $filter): array
+    {
+        $propertyId = $filter->propertyId();
+        $monthNames = [1 => 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+        $months = $filter->month() === null ? range(1, 12) : [$filter->month()];
+
+        $result = [];
+        $totalIn = 0;
+        $totalOut = 0;
+
+        foreach ($months as $m) {
+            $start = new \DateTimeImmutable(sprintf('%04d-%02d-01', $filter->year(), $m));
+            $end = $start->modify('+1 month');
+            $startStr = $start->format('Y-m-d');
+            $endStr = $end->format('Y-m-d');
+
+            // Count check-ins in this month
+            $inCount = (int) $this->db->table('reservations')
+                ->where('property_id', $propertyId)
+                ->whereIn('status', ['Confirmed', 'Checked_In', 'Checked_Out'])
+                ->where('check_in_date >=', $startStr)
+                ->where('check_in_date <', $endStr)
+                ->countAllResults();
+
+            // Count check-outs in this month
+            $outCount = (int) $this->db->table('reservations')
+                ->where('property_id', $propertyId)
+                ->whereIn('status', ['Checked_Out'])
+                ->where('check_out_date >=', $startStr)
+                ->where('check_out_date <', $endStr)
+                ->countAllResults();
+
+            $result[] = [
+                'label' => $monthNames[$m] . ' ' . $filter->year(),
+                'month' => $start->format('Y-m'),
+                'in' => $inCount,
+                'out' => $outCount,
+                'net' => $inCount - $outCount,
+            ];
+            $totalIn += $inCount;
+            $totalOut += $outCount;
+        }
+
+        return [
+            'months' => $result,
+            'summary' => ['total_in' => $totalIn, 'total_out' => $totalOut, 'net' => $totalIn - $totalOut],
+        ];
+    }
+
+    /**
+     * Proyeksi Pendapatan Sewa Bulan Depan (Committed Rent).
+     *
+     * Finds all active reservations (Confirmed or Checked_In) whose
+     * check_out_date extends beyond the start of next month, meaning
+     * the tenant is still renting next month.
+     *
+     * @return array{next_month_label:string,committed_rooms:int,total_rooms:int,committed_rent:float,occupancy_rate:float,rooms:list<array<string,mixed>>}
+     */
+    private function committedRent(MarketingAnalyticsFilter $filter): array
+    {
+        $propertyId = $filter->propertyId();
+        $today = new \DateTimeImmutable('today');
+        $nextMonthStart = $today->modify('first day of next month');
+        $nextMonthEnd = $nextMonthStart->modify('+1 month');
+        $monthNames = [1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        $nextMonthLabel = $monthNames[(int) $nextMonthStart->format('n')] . ' ' . $nextMonthStart->format('Y');
+
+        $totalRooms = $this->roomCount($filter);
+
+        // Active reservations that extend into next month
+        $activeReservations = $this->db->table('reservations')
+            ->select('reservations.id, reservations.total_amount, reservations.check_in_date, reservations.check_out_date, guests.full_name, rooms.room_number, rooms.price_per_night')
+            ->join('guests', 'guests.id = reservations.guest_id')
+            ->join('rooms', 'rooms.id = reservations.room_id')
+            ->where('reservations.property_id', $propertyId)
+            ->whereIn('reservations.status', ['Confirmed', 'Checked_In'])
+            ->where('reservations.check_in_date <', $nextMonthEnd->format('Y-m-d'))
+            ->where('reservations.check_out_date >', $nextMonthStart->format('Y-m-d'))
+            ->orderBy('rooms.room_number', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        // Calculate monthly rent per room
+        $committedRent = 0.0;
+        $roomDetails = [];
+        $pricing = PropertyPricing::forProperty($propertyId);
+        $baseRate = $pricing['base_rate'];
+
+        foreach ($activeReservations as $r) {
+            $roomPrice = (float) ($r['price_per_night'] ?? 0);
+            $monthlyRate = $roomPrice > 0 ? $roomPrice : $baseRate;
+            $committedRent += $monthlyRate;
+
+            $roomDetails[] = [
+                'room_number' => $r['room_number'],
+                'guest_name' => $r['full_name'],
+                'check_out_date' => $r['check_out_date'],
+                'monthly_rate' => $monthlyRate,
+            ];
+        }
+
+        $committedRooms = count($activeReservations);
+        $occupancyRate = $totalRooms > 0 ? round(($committedRooms / $totalRooms) * 100, 1) : 0.0;
+
+        return [
+            'next_month_label' => $nextMonthLabel,
+            'committed_rooms' => $committedRooms,
+            'total_rooms' => $totalRooms,
+            'committed_rent' => $committedRent,
+            'occupancy_rate' => $occupancyRate,
+            'rooms' => $roomDetails,
+        ];
+    }
+
+    /**
+     * Radar Jatuh Tempo / Masa Sewa Akan Berakhir.
+     *
+     * Lists active reservations whose check_out_date falls within the
+     * next 7 or 30 days from today.
+     *
+     * @return array{expiring_7:list<array<string,mixed>>,expiring_30:list<array<string,mixed>>,count_7:int,count_30:int}
+     */
+    private function leaseExpirations(MarketingAnalyticsFilter $filter): array
+    {
+        $propertyId = $filter->propertyId();
+        $today = new \DateTimeImmutable('today');
+        $in7 = $today->modify('+7 days');
+        $in30 = $today->modify('+30 days');
+
+        $rows = $this->db->table('reservations')
+            ->select('reservations.check_in_date, reservations.check_out_date, reservations.total_amount, guests.full_name, guests.phone, guests.email, rooms.room_number')
+            ->join('guests', 'guests.id = reservations.guest_id')
+            ->join('rooms', 'rooms.id = reservations.room_id')
+            ->where('reservations.property_id', $propertyId)
+            ->whereIn('reservations.status', ['Confirmed', 'Checked_In'])
+            ->where('reservations.check_out_date >', $today->format('Y-m-d'))
+            ->where('reservations.check_out_date <=', $in30->format('Y-m-d'))
+            ->orderBy('reservations.check_out_date', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        $expiring7 = [];
+        $expiring30 = [];
+
+        foreach ($rows as $row) {
+            $checkOut = new \DateTimeImmutable((string) $row['check_out_date']);
+            $daysLeft = (int) $today->diff($checkOut)->days;
+
+            // Calculate rental duration in months
+            $checkIn = new \DateTimeImmutable((string) $row['check_in_date']);
+            $wholeMonths = PropertyPricing::wholeMonths($checkIn->format('Y-m-d'), $checkOut->format('Y-m-d'));
+            if ($wholeMonths === null) {
+                $wholeMonths = max(1, (int) round($checkIn->diff($checkOut)->days / 30));
+            }
+
+            // Build WA link
+            $rawPhone = trim((string) ($row['phone'] ?? ''));
+            $digits = preg_replace('/\D+/', '', $rawPhone);
+            $waPhone = '';
+            if ($digits !== '' && $digits !== '0') {
+                if (str_starts_with($digits, '62')) {
+                    $waPhone = $digits;
+                } elseif (str_starts_with($digits, '0')) {
+                    $waPhone = '62' . substr($digits, 1);
+                } elseif (str_starts_with($digits, '8')) {
+                    $waPhone = '62' . $digits;
+                } else {
+                    $waPhone = $digits;
+                }
+            }
+
+            $entry = [
+                'guest_name' => $row['full_name'],
+                'room_number' => $row['room_number'],
+                'check_in_date' => $row['check_in_date'],
+                'check_out_date' => $row['check_out_date'],
+                'days_left' => $daysLeft,
+                'duration_months' => $wholeMonths,
+                'phone' => $rawPhone,
+                'wa_phone' => $waPhone,
+            ];
+
+            if ($checkOut <= $in7) {
+                $expiring7[] = $entry;
+            }
+            $expiring30[] = $entry;
+        }
+
+        return [
+            'expiring_7' => $expiring7,
+            'expiring_30' => $expiring30,
+            'count_7' => count($expiring7),
+            'count_30' => count($expiring30),
+        ];
     }
 }

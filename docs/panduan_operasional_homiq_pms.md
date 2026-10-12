@@ -139,7 +139,7 @@ Untuk role **Admin** dan **Staff**, nilai Revenue dan Net Profit pada Dashboard 
 ### Data Tamu dan Harga Kamar
 
 - **Data Tamu** menyimpan direktori tamu dari input manual maupun booking.
-- **Harga Kamar** digunakan untuk mengatur harga per kamar atau menerapkan harga ke semua kamar.
+- **Harga Kamar** digunakan untuk mengatur tarif properti, menerapkan harga massal, serta mengedit nama/nomor kamar dan tarif spesifik masing-masing kamar (termasuk tarif per kamar per bulan pada Kos Mitra).
 
 ## 9. Finance
 
@@ -191,20 +191,23 @@ Untuk role **Admin** dan **Staff**, nilai Revenue dan Net Profit pada Dashboard 
 |---|---|
 | Atmin | Superuser internal/legacy: dashboard, finance, analytics, operasional, front desk, housekeeping, settings, dan support. |
 | Admin | Dashboard (nilai finansial disensor), analytics, operasional, front desk, housekeeping, settings, dan support. Tidak membuka Finance perusahaan. |
-| Manager | Dashboard, finance, analytics, operasional, front desk, housekeeping, dan support. |
+| Manager | Semua menu: dashboard, finance, analytics, operasional, front desk, housekeeping, settings (kelola akun & role user), dan support. |
 | Finance | Dashboard, finance, analytics, operasional, front desk, housekeeping, dan support. |
 | Marketing | Dashboard, analytics, front desk, housekeeping, dan support. Tidak membuka finance maupun operasional. |
 | Operational | Dashboard, finance, analytics, operasional, front desk, housekeeping, dan support. |
 | Housekeeping | Housekeeping saja; setelah login langsung menuju halaman Housekeeping. |
 | Staff | Dashboard (nilai finansial disensor), analytics, front desk, housekeeping, dan support. |
-| Owner GH 1–5 | Keuangan Owner/Investor untuk GH miliknya saja. |
+| Owner GH 1–5 | Keuangan Owner/Investor untuk GH (HomiQ) miliknya saja. |
+| Owner HS Mitra | Keuangan Owner/Investor untuk Homestay Mitra miliknya saja. Tidak dapat membuka menu operasional umum. |
+| Owner Kos Mitra | Keuangan Owner/Investor untuk Kos Mitra miliknya saja. Tidak dapat membuka menu operasional umum. |
 
 Ketentuan tambahan role:
 
-- Hanya **Admin** dan **Atmin** yang dapat mengelola user/role pada Settings.
+- Role **Manager**, **Admin**, dan **Atmin** dapat mengelola user/role pada Settings.
 - Owner GH tidak dapat memilih GH lain melalui URL ataupun ekspor laporan; GH dikunci sesuai role.
-- Bukti pembayaran dapat dibuka oleh role operasional yang memiliki akses Front Desk dan Owner GH terkait.
-- Bukti pengeluaran dapat dibuka oleh Finance/Operasional/Manager/Admin/Atmin serta Owner GH yang diizinkan.
+- Owner HS Mitra dan Owner Kos Mitra terkunci pada properti mitra masing-masing; tidak dapat mengakses menu operasional umum atau properti lain.
+- Bukti pembayaran dapat dibuka oleh role operasional yang memiliki akses Front Desk dan Owner terkait.
+- Bukti pengeluaran dapat dibuka oleh Finance/Operasional/Manager/Admin/Atmin serta Owner terkait.
 
 ## 13. Keamanan dan batas penggunaan
 

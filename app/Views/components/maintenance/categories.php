@@ -1,4 +1,9 @@
-<?php $canManage = in_array((string) session('role'), ['Atmin', 'Admin', 'Manager'], true); ?>
+<?php $canManage = \App\Libraries\PropertyContext::activeId() === \App\Libraries\PropertyContext::HOMIQ_ID
+    && in_array((string) session('role'), ['Atmin', 'Admin', 'Manager'], true); ?>
+
+<?php if (! $canManage && \App\Libraries\PropertyContext::activeId() !== \App\Libraries\PropertyContext::HOMIQ_ID): ?>
+    <div class="alert alert-info">Kategori maintenance adalah katalog bersama. Pada properti Mitra, kategori dapat dipakai untuk tiket dan aset, tetapi pengubahannya hanya dilakukan dari HomiQ.</div>
+<?php endif; ?>
 
 <?php if ($canManage): ?>
     <div class="card border-0 shadow-sm mb-4">

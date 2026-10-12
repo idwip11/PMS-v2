@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Libraries\GuestDirectory;
+use App\Libraries\PropertyContext;
 
 class GuestController extends BaseController
 {
@@ -10,7 +11,8 @@ class GuestController extends BaseController
     {
         $search = trim((string) $this->request->getGet('q'));
         $builder = db_connect()->table('guests')
-            ->select('id, full_name, email, phone, origin, notes');
+            ->select('id, full_name, email, phone, origin, notes')
+            ->where('property_id', PropertyContext::activeId());
 
         if ($search !== '') {
             $builder->groupStart()
@@ -35,11 +37,13 @@ class GuestController extends BaseController
         $search = trim((string) $this->request->getGet('q'));
         $staySummary = $db->table('reservations')
             ->select('guest_id, COUNT(DISTINCT booking_group_id) AS reservation_count, MAX(check_out_date) AS last_stay', false)
+            ->where('property_id', PropertyContext::activeId())
             ->groupBy('guest_id')
             ->getCompiledSelect();
 
         $builder = $db->table('guests')
             ->select('guests.*, COALESCE(stays.reservation_count, 0) AS reservation_count, stays.last_stay', false)
+            ->where('guests.property_id', PropertyContext::activeId())
             ->join("({$staySummary}) stays", 'stays.guest_id = guests.id', 'left', false);
 
         if ($search !== '') {
@@ -84,14 +88,14 @@ class GuestController extends BaseController
         }
 
         $db = db_connect();
-        $guest = $db->table('guests')->select('id')->where('id', $id)->get()->getRowArray();
+        $guest = $db->table('guests')->select('id')->where('id', $id)->where('property_id', PropertyContext::activeId())->get()->getRowArray();
         if ($guest === null) {
             return redirect()->to('/guests')->with('error', 'Data tamu tidak ditemukan.');
         }
 
         helper('marketing_analytics');
         $origin = normalize_guest_origin($this->request->getPost('origin'));
-        $db->table('guests')->where('id', $id)->update([
+        $db->table('guests')->where('id', $id)->where('property_id', PropertyContext::activeId())->update([
             'full_name' => trim((string) $this->request->getPost('full_name')),
             'email' => $this->nullablePost('email'),
             'phone' => $this->nullablePost('phone'),
@@ -106,17 +110,17 @@ class GuestController extends BaseController
     public function delete(int $id)
     {
         $db = db_connect();
-        $guest = $db->table('guests')->select('id, full_name')->where('id', $id)->get()->getRowArray();
+        $guest = $db->table('guests')->select('id, full_name')->where('id', $id)->where('property_id', PropertyContext::activeId())->get()->getRowArray();
         if ($guest === null) {
             return redirect()->to('/guests')->with('error', 'Data tamu tidak ditemukan.');
         }
 
-        $reservationCount = $db->table('reservations')->where('guest_id', $id)->countAllResults();
+        $reservationCount = $db->table('reservations')->where('guest_id', $id)->where('property_id', PropertyContext::activeId())->countAllResults();
         if ($reservationCount > 0) {
             return redirect()->to('/guests')->with('error', 'Tamu tidak dapat dihapus karena sudah memiliki histori reservasi.');
         }
 
-        $db->table('guests')->where('id', $id)->delete();
+        $db->table('guests')->where('id', $id)->where('property_id', PropertyContext::activeId())->delete();
 
         return redirect()->to('/guests')->with('success', 'Data tamu ' . $guest['full_name'] . ' berhasil dihapus.');
     }

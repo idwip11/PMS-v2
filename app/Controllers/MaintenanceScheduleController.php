@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Libraries\MaintenanceScheduleService;
+use App\Libraries\PropertyContext;
 use DateTimeImmutable;
 
 class MaintenanceScheduleController extends BaseController
@@ -68,7 +69,7 @@ class MaintenanceScheduleController extends BaseController
 
     public function generateDue()
     {
-        $result = (new MaintenanceScheduleService())->generateDueTickets($this->currentUserId());
+        $result = (new MaintenanceScheduleService())->generateDueTickets($this->currentUserId(), PropertyContext::activeId());
         $message = $result['created'] . ' Work Order preventive dibuat';
         if ($result['skipped'] > 0) {
             $message .= ', ' . $result['skipped'] . ' jadwal sudah memiliki Work Order aktif';
@@ -145,6 +146,7 @@ class MaintenanceScheduleController extends BaseController
             ->select('maintenance_schedules.*, room_assets.asset_name, rooms.room_number, maintenance_categories.name AS category_name')
             ->join('room_assets', 'room_assets.id = maintenance_schedules.room_asset_id')
             ->join('rooms', 'rooms.id = room_assets.room_id')
+            ->where('rooms.property_id', PropertyContext::activeId())
             ->join('maintenance_categories', 'maintenance_categories.id = room_assets.maintenance_category_id')
             ->where('maintenance_schedules.id', $id)
             ->get()->getRowArray();
@@ -157,12 +159,13 @@ class MaintenanceScheduleController extends BaseController
             'roomAssets' => $db->table('room_assets')
                 ->select('room_assets.*, rooms.room_number, maintenance_categories.name AS category_name')
                 ->join('rooms', 'rooms.id = room_assets.room_id')
+                ->where('rooms.property_id', PropertyContext::activeId())
                 ->join('maintenance_categories', 'maintenance_categories.id = room_assets.maintenance_category_id')
                 ->where('room_assets.is_active', 1)
                 ->orderBy('rooms.room_number', 'ASC')
                 ->orderBy('room_assets.asset_name', 'ASC')
                 ->get()->getResultArray(),
-            'users' => $db->table('users')->orderBy('full_name', 'ASC')->get()->getResultArray(),
+            'users' => $db->table('users')->select('users.*')->join('user_property_roles upr', 'upr.user_id = users.id')->where('upr.property_id', PropertyContext::activeId())->orderBy('users.full_name', 'ASC')->get()->getResultArray(),
             'feedbackType' => $feedbackType,
             'feedbackMessage' => $feedbackMessage,
         ];
@@ -187,17 +190,17 @@ class MaintenanceScheduleController extends BaseController
      */
     private function findSchedule(int $id): ?array
     {
-        return db_connect()->table('maintenance_schedules')->where('id', $id)->get()->getRowArray();
+        return db_connect()->table('maintenance_schedules')->select('maintenance_schedules.*')->join('room_assets', 'room_assets.id = maintenance_schedules.room_asset_id')->join('rooms', 'rooms.id = room_assets.room_id')->where('rooms.property_id', PropertyContext::activeId())->where('maintenance_schedules.id', $id)->get()->getRowArray();
     }
 
     private function assetExists(int $id): bool
     {
-        return db_connect()->table('room_assets')->where('id', $id)->where('is_active', 1)->countAllResults() > 0;
+        return db_connect()->table('room_assets')->join('rooms', 'rooms.id = room_assets.room_id')->where('rooms.property_id', PropertyContext::activeId())->where('room_assets.id', $id)->where('room_assets.is_active', 1)->countAllResults() > 0;
     }
 
     private function userExists(int $id): bool
     {
-        return db_connect()->table('users')->where('id', $id)->countAllResults() > 0;
+        return db_connect()->table('user_property_roles')->where('user_id', $id)->where('property_id', PropertyContext::activeId())->countAllResults() > 0;
     }
 
     private function currentUserId(): ?int

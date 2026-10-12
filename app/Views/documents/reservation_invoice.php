@@ -18,16 +18,20 @@ $dateLabel = static function (?string $value) use ($months): string {
     }
 };
 
+$isWholeHome = \App\Libraries\PropertyPricing::forProperty((int) $reservation['property_id'])['pricing_mode'] === 'whole_home_nightly'
+    || (int) $reservation['property_id'] === 2;
 $firstRoom = $groupReservations[0] ?? $reservation;
-$roomNames = array_map(
-    static fn (array $room): string => 'Room ' . $room['room_number'],
-    $groupReservations,
-);
+$roomNames = $isWholeHome
+    ? ['Homestay Mitra']
+    : array_map(
+        static fn (array $room): string => 'Room ' . $room['room_number'],
+        $groupReservations,
+    );
 $guesthouses = array_values(array_unique(array_filter(array_map(
     static fn (array $room): string => trim((string) ($room['guesthouse'] ?? '')),
     $groupReservations,
 ))));
-$propertySuffix = $guesthouses === [] ? '' : ' - GH ' . implode(', ', $guesthouses);
+$propertySuffix = ($isHomiq ?? false) && $guesthouses !== [] ? ' - GH ' . implode(', ', $guesthouses) : '';
 $isTransit = (string) $reservation['check_in_date'] === (string) $reservation['check_out_date'];
 $isCompact = (bool) ($isCompact ?? false);
 $hasServiceCharges = $additionalRows !== [];
@@ -37,6 +41,8 @@ $hasServiceCharges = $additionalRows !== [];
 <head>
     <meta charset="utf-8">
     <title>Invoice <?= esc($invoiceNumber) ?></title>
+    <link rel="icon" type="image/svg+xml" href="<?= base_url('images/homiq-icon.svg') ?>">
+    <link rel="shortcut icon" href="<?= base_url('favicon.ico') ?>">
     <style>
         @page { margin: 13mm 14mm 28mm; }
         * { box-sizing: border-box; }
@@ -148,7 +154,7 @@ $hasServiceCharges = $additionalRows !== [];
     <table class="property-table">
         <tr>
             <td>
-                <div class="property-name">Adiputra Guesthouse by HomiQ<?= esc($propertySuffix) ?></div>
+                <div class="property-name"><?= esc($propertyName ?? 'Adiputra Guesthouse by HomiQ') ?><?= esc($propertySuffix) ?></div>
                 <div class="muted">Tanda pemesanan dan rincian pembayaran tamu</div>
             </td>
             <td style="width: 198px;">
@@ -169,9 +175,9 @@ $hasServiceCharges = $additionalRows !== [];
                     <table class="detail-table">
                         <tr><td>Channel</td><td><?= esc((string) ($reservation['source'] ?? '-')) ?></td></tr>
                         <tr><td>Tanggal Reservasi</td><td><?= esc($dateLabel($invoiceDate)) ?></td></tr>
-                        <tr><td>Check-in</td><td><?= esc($dateLabel((string) $reservation['check_in_date'])) ?></td></tr>
-                        <tr><td>Check-out</td><td><?= esc($dateLabel((string) $reservation['check_out_date'])) ?></td></tr>
-                        <tr><td>Jenis Menginap</td><td><?= $isTransit ? 'Transit' : 'Menginap' ?></td></tr>
+                        <tr><td><?= ($isMonthly ?? false) ? 'Tanggal Masuk' : 'Check-in' ?></td><td><?= esc($dateLabel((string) $reservation['check_in_date'])) ?></td></tr>
+                        <tr><td><?= ($isMonthly ?? false) ? 'Tanggal Keluar' : 'Check-out' ?></td><td><?= esc($dateLabel((string) $reservation['check_out_date'])) ?></td></tr>
+                        <tr><td><?= ($isMonthly ?? false) ? 'Jenis Sewa' : 'Jenis Menginap' ?></td><td><?= $isTransit ? 'Transit' : (($isMonthly ?? false) ? 'Sewa Bulanan' : 'Menginap') ?></td></tr>
                         <tr><td>Jumlah Kamar</td><td><?= count($groupReservations) ?> kamar</td></tr>
                     </table>
                 </div>
@@ -193,21 +199,21 @@ $hasServiceCharges = $additionalRows !== [];
     </table>
 
     <?php if (! $isCompact): ?>
-        <div class="section-title">Biaya Kamar</div>
+        <div class="section-title"><?= $isWholeHome ? 'Biaya Sewa Homestay' : 'Biaya Kamar' ?></div>
         <table class="data-table">
             <thead>
-                <tr><th style="width: 21%;">Tanggal</th><th>Kamar</th><th class="amount" style="width: 25%;">Biaya</th></tr>
+                <tr><th style="width: 21%;">Tanggal</th><th><?= $isWholeHome ? 'Homestay' : 'Kamar' ?></th><th class="amount" style="width: 25%;">Biaya</th></tr>
             </thead>
             <tbody>
                 <?php foreach ($roomRows as $row): ?>
                     <tr>
                         <td><?= esc($dateLabel((string) $row['date'])) ?></td>
-                        <td><?= esc((string) $row['room']) ?></td>
+                        <td><?= esc($isWholeHome ? preg_replace('/^Room \d+/', 'Homestay Mitra', (string) $row['room']) : (string) $row['room']) ?></td>
                         <td class="amount"><?= esc($money((float) $row['amount'])) ?></td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
-            <tfoot><tr><td colspan="2">Total Biaya Kamar</td><td class="amount"><?= esc($money((float) $roomTotal)) ?></td></tr></tfoot>
+            <tfoot><tr><td colspan="2"><?= $isWholeHome ? 'Total Biaya Sewa Homestay' : 'Total Biaya Kamar' ?></td><td class="amount"><?= esc($money((float) $roomTotal)) ?></td></tr></tfoot>
         </table>
     <?php endif; ?>
 

@@ -3,17 +3,22 @@
 use CodeIgniter\Router\RouteCollection;
 
 /** @var RouteCollection $routes */
-$routes->get('/', 'DashboardController::index', ['filter' => ['auth', 'access:dashboard']]);
+$routes->get('/', 'DashboardController::index', ['filter' => ['auth', 'propertyReady', 'access:dashboard']]);
 $routes->get('login', 'AuthController::index');
 $routes->post('login', 'AuthController::login');
 $routes->post('logout', 'AuthController::logout', ['filter' => 'auth']);
+$routes->get('property-pending', 'PropertyController::pending', ['filter' => 'auth']);
+$routes->post('properties/select', 'PropertyController::select', ['filter' => 'auth']);
+$routes->get('finance/company', 'CompanyFinanceController::index', ['filter' => 'companyFinance:view']);
+$routes->get('finance/company/export', 'CompanyFinanceController::export', ['filter' => 'companyFinance:export']);
+$routes->post('finance/company/cash', 'CompanyFinanceController::cash', ['filter' => 'companyFinance:post']);
 
-$routes->group('', ['filter' => ['auth', 'lastDataUpdate']], static function ($routes): void {
+$routes->group('', ['filter' => ['auth', 'propertyReady', 'lastDataUpdate']], static function ($routes): void {
     $routes->get('dashboard', 'DashboardController::index', ['filter' => 'access:dashboard']);
     $routes->get('dashboard/metrics', 'DashboardController::metrics', ['filter' => 'access:dashboard']);
     $routes->get('dashboard/recent-reservations/export', 'DashboardController::exportRecentReservations', ['filter' => 'access:dashboard']);
     $routes->get('dashboard/activity/(:segment)', 'DashboardController::activity/$1', ['filter' => 'access:dashboard']);
-    $routes->get('access-pending', 'AccessPendingController::index', ['filter' => 'access:pending']);
+    $routes->get('access-pending', 'AccessPendingController::index');
     $routes->get('housekeeping', 'HousekeepingController::index', ['filter' => 'access:housekeeping']);
     $routes->get('housekeeping/panel', 'HousekeepingController::panel', ['filter' => 'access:housekeeping']);
     $routes->post('housekeeping/rooms/(:num)/status', 'HousekeepingController::updateRoomStatus/$1', ['filter' => 'access:housekeeping']);
@@ -36,8 +41,12 @@ $routes->group('', ['filter' => ['auth', 'lastDataUpdate']], static function ($r
     $routes->post('reservations/(:num)/booking-com-settlement', 'ReservationController::recordBookingComSettlement/$1', ['filter' => 'access:front_desk']);
     $routes->post('reservations/(:num)/services', 'ReservationController::addServices/$1', ['filter' => 'access:front_desk']);
     $routes->post('reservations/(:num)/stay-dates', 'ReservationController::updateStayDates/$1', ['filter' => 'access:front_desk']);
+    $routes->post('reservations/(:num)/important-note', 'ReservationController::updateImportantNote/$1', ['filter' => 'access:front_desk']);
     $routes->post('reservations/(:num)/reconciliation', 'ReservationController::toggleReconciliation/$1', ['filter' => 'access:front_desk']);
+    $routes->get('reservations/(:num)/extend', 'ReservationController::extendModal/$1', ['filter' => 'access:front_desk']);
+    $routes->post('reservations/(:num)/extend', 'ReservationController::saveExtension/$1', ['filter' => 'access:front_desk']);
     $routes->post('payments/(:num)/date', 'ReservationController::updatePaymentDate/$1', ['filter' => 'access:front_desk']);
+    $routes->post('payments/(:num)/proof', 'ReservationController::uploadPaymentProof/$1', ['filter' => 'access:front_desk']);
     $routes->get('payments/(:num)/proof', 'ReservationController::paymentProof/$1', ['filter' => 'access:payment_proof']);
     $routes->post('reservations/(:num)/status', 'ReservationController::changeStatus/$1', ['filter' => 'access:front_desk']);
     $routes->get('guests/suggestions', 'GuestController::suggestions', ['filter' => 'access:front_desk']);
@@ -46,6 +55,7 @@ $routes->group('', ['filter' => ['auth', 'lastDataUpdate']], static function ($r
     $routes->post('guests/(:num)', 'GuestController::update/$1', ['filter' => 'access:front_desk']);
     $routes->post('guests/(:num)/delete', 'GuestController::delete/$1', ['filter' => 'access:front_desk']);
     $routes->get('room-pricing', 'RoomPricingController::index', ['filter' => 'access:front_desk']);
+    $routes->get('room-pricing/(:num)/edit', 'RoomPricingController::edit/$1', ['filter' => 'access:front_desk']);
     $routes->post('room-pricing/all', 'RoomPricingController::updateAll', ['filter' => 'access:front_desk']);
     $routes->post('room-pricing/(:num)', 'RoomPricingController::update/$1', ['filter' => 'access:front_desk']);
     $routes->get('finance', 'FinanceController::index', ['filter' => 'access:finance']);
@@ -96,6 +106,8 @@ $routes->group('', ['filter' => ['auth', 'lastDataUpdate']], static function ($r
     $routes->get('settings/panel', 'SettingsController::panel', ['filter' => 'access:settings']);
     $routes->post('settings/users', 'SettingsController::createUser', ['filter' => 'access:settings']);
     $routes->post('settings/users/(:num)', 'SettingsController::updateUser/$1', ['filter' => 'access:settings']);
+    $routes->post('settings/users/(:num)/property-roles', 'SettingsController::savePropertyRole/$1', ['filter' => 'access:settings']);
+    $routes->post('settings/users/(:num)/property-roles/(:num)/delete', 'SettingsController::deletePropertyRole/$1/$2', ['filter' => 'access:settings']);
     $routes->post('settings/users/(:num)/delete', 'SettingsController::deleteUser/$1', ['filter' => 'access:settings']);
     $routes->get('support', 'SupportController::index', ['filter' => 'access:support']);
 });

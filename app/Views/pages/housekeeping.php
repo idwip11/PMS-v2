@@ -2,6 +2,7 @@
 <?= $this->section('content') ?>
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3 mb-4">
     <div class="d-flex flex-column flex-sm-row gap-3">
+        <?php if (\App\Libraries\PropertyContext::activeId() === \App\Libraries\PropertyContext::HOMIQ_ID): ?>
         <div>
         <label class="form-label mb-1" for="housekeeping-filter">Guesthouse</label>
         <select id="housekeeping-filter" class="form-select" name="guesthouse"
@@ -17,6 +18,9 @@
             <?php endfor; ?>
         </select>
         </div>
+        <?php else: ?>
+        <input id="housekeeping-filter" type="hidden" name="guesthouse" value="">
+        <?php endif; ?>
         <div>
         <label class="form-label mb-1" for="housekeeping-status-filter">Status Kamar</label>
         <select id="housekeeping-status-filter" class="form-select" name="status"
