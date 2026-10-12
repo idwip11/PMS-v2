@@ -131,9 +131,7 @@ _modules/*
 .env.*
 !.env.example
 node_modules/
-/app.zip
-/new.zip
-/vendor.zip
+/*.zip
 /writable/temp/
 /.local-patch/
 /.agents/
